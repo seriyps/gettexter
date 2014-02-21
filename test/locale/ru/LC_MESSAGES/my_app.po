@@ -1,0 +1,70 @@
+# Russian translations for my_app package.
+# Copyright (C) 2014 THE my_app'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the my_app package.
+# Sergey Prokhorov <me@seriyps.ru>, 2014.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: my_app\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-02-21 01:34+0400\n"
+"PO-Revision-Date: 2014-02-21 01:56+0300\n"
+"Last-Translator: Sergey Prokhorov <me@seriyps.ru>\n"
+"Language-Team: Russian <ru@li.org>\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
+"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"X-Generator: Poedit 1.5.4\n"
+
+#: test/translate_me.erl:14
+msgid "Wanna sleep?"
+msgstr "Хочешь спать?"
+
+#: test/translate_me.erl:15
+msgid "Wanna eat?"
+msgstr "Хочешь есть?"
+
+#: test/translate_me.erl:18
+msgid "go sleep a hour"
+msgid_plural "go sleep ~p hours"
+msgstr[0] "сходи поспи часок"
+msgstr[1] "сходи поспи ~p часа"
+msgstr[2] "сходи поспи ~p часов"
+
+#: test/translate_me.erl:20
+msgid "take one babana"
+msgid_plural "take ~p bananas"
+msgstr[0] "возьми один банан"
+msgstr[1] "возьми ~p банана"
+msgstr[2] "возьми ~p бананов"
+
+#. Translators: this is hello message
+#: test/translate_me.erl:24
+msgid "Hello, ~p! ~ts"
+msgstr "Привет, ~p! ~ts"
+
+#: test/translate_me.erl:25
+msgid "So, you may ~ts"
+msgstr "Итак, ты говоришь ~ts"
+
+#: test/translate_me.erl:26
+msgid "Other domain"
+msgstr "Другой домен"
+
+#: test/translate_me.erl:27
+msgid "One other domain"
+msgid_plural "~p other domains"
+msgstr[0] "Один другой домен"
+msgstr[1] "~p других домена"
+msgstr[2] "~p других доменов"
+
+#: test/translate_me.erl:28
+msgctxt "the-context"
+msgid "One other domain"
+msgid_plural "~p other domains"
+msgstr[0] "Один другой домен"
+msgstr[1] "~p других домена"
+msgstr[2] "~p других доменов"

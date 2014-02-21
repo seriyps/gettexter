@@ -1,0 +1,65 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: my_app\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-02-21 01:34+0400\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: test/translate_me.erl:14
+msgid "Wanna sleep?"
+msgstr ""
+
+#: test/translate_me.erl:15
+msgid "Wanna eat?"
+msgstr ""
+
+#: test/translate_me.erl:18
+msgid "go sleep a hour"
+msgid_plural "go sleep ~p hours"
+msgstr[0] ""
+msgstr[1] ""
+
+#: test/translate_me.erl:20
+msgid "take one babana"
+msgid_plural "take ~p bananas"
+msgstr[0] ""
+msgstr[1] ""
+
+#. Translators: this is hello message
+#: test/translate_me.erl:24
+msgid "Hello, ~p! ~ts"
+msgstr ""
+
+#: test/translate_me.erl:25
+msgid "So, you may ~ts"
+msgstr ""
+
+#: test/translate_me.erl:26
+msgid "Other domain"
+msgstr ""
+
+#: test/translate_me.erl:27
+msgid "One other domain"
+msgid_plural "~p other domains"
+msgstr[0] ""
+msgstr[1] ""
+
+#: test/translate_me.erl:28
+msgctxt "the-context"
+msgid "One other domain"
+msgid_plural "~p other domains"
+msgstr[0] ""
+msgstr[1] ""

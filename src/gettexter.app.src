@@ -1,0 +1,12 @@
+{application, gettexter,
+ [
+  {description, "GNU gettext compatible translation library"},
+  {vsn, "v0.0.1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { gettexter_app, []}},
+  {env, []}
+ ]}.
