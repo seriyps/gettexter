@@ -39,7 +39,7 @@ Mark your translatable strings with:
 -include_lib("gettexter/include/shortcuts.hrl").
 
 main(Name, What) ->
-    gettexter:bindtextdomain(?GETTEXT_DOMAIN, "/.../locales/"), % from where load locales
+    gettexter:bindtextdomain(?GETTEXT_DOMAIN, "/.../locales"), % from where load locales
     gettexter:setlocale(undefined, "en"),  % locale for current process
     gettexter:textdomain(?GETTEXT_DOMAIN), % domain for current process
 
@@ -57,11 +57,11 @@ Extract messages from sources to .pot file by `xgettext` command
 export APP=my_app
 
 xgettext -o locales/${APP}.pot --package-name=${APP} -d ${APP} --sort-by-file -L C \
-      --keyword='NO_' --keyword='_' --keyword='N_:1,2' \
-      --keyword='P_:1c,2' --keyword='NP_:1c,2,3' \
-      --keyword='D_:2' --keyword='DN_:2,3' --keyword='DP_:2c,3' --keyword='DNP_:2c,3,4' \
-      --add-comments=Translators \
-      src/my_module.erl src/*.erl
+     --keyword='NO_' --keyword='_' --keyword='N_:1,2' \
+     --keyword='P_:1c,2' --keyword='NP_:1c,2,3' \
+     --keyword='D_:2' --keyword='DN_:2,3' --keyword='DP_:2c,3' --keyword='DNP_:2c,3,4' \
+     --add-comments=Translators \
+     src/my_module.erl src/*.erl
 ```
 
 Initialize new locale's .po file by `msginit`
@@ -124,7 +124,7 @@ Gettext calls, which will search in a specific domain (namespace).
 gettexter:bindtextdomain(Domain :: atom(), LocaleDir :: file:filename()) -> ok.
 gettexter:bindtextdomain(LocaleDir :: file:filename()) -> ok.
 ```
-Setup directory on which to load .mo files like `${LocaleDir}/${Locale}/LC_MESSAGES/${Domain}.mo`.
+Setup directory from which .mo files will be loaded like `${LocaleDir}/${Locale}/LC_MESSAGES/${Domain}.mo`.
 Domain **MUST** be specified for library applications (see `dgettext`).
 Default `Domain` is `application:get_application()`.
 This function usualy called only once at application initialization/configuration phase.
@@ -134,8 +134,8 @@ gettexter:setlocale(undefined, Locale :: string()) -> {ok, string()}.
 gettexter:setlocale(undefined, Locale :: string()) -> {ok, string()}.
 ```
 Set default locale for **current process**, returning opaque string, which may be
-used to restore exactly this locale in future. It also loads `Locale` .mo files from
-the `LocaleDir`'s for each `Domain` (if not loaded yet).
+used to restore exactly this locale in future. It also loads .mo files for `Locale` from
+the `LocaleDir`s for each `Domain` (if not loaded yet).
 1'st argumet is currently reserved.
 
 ```erlang
@@ -145,7 +145,7 @@ Set default domain (namespace) for **current process**.
 If you call it like `textdomain(my_app)`, then `gettext(Key)` calls will be
 converted to `dgettext(my_app, Key)`.
 XXX: it's highly preferable to use `dgettext` directly and don't use this
-API function, if localized strings should be rendered in different processes.
+API function, if localized strings can be rendered in different processes.
 
 
 XXX: Note, that `gettexter:gettext(Key)` call will be finally converted to
@@ -169,15 +169,15 @@ TODO
 Expression, `?_(<<"...">>)` is not well handled by `xgettext`, so, variants:
 
 * Provide smth like `-define(B_(Str), gettexter_bin:gettext(Str)).` (which
-return binary translation for string key and add all of the `B*_` to `xgettext` keys.
+  return binary translation for string key and add all of the `B*_` to `xgettext` keys.
 
-* Allow to define return value of `?*_` macroses in module-level by smth lik
-```erlang
--define(GETTEXT_USE_BIN, true).
--include_lib("gettexter/include/shortcuts.hrl").
-```
-and if `true`, in macroses replace `gettexter:*` calls to smth like `gettexter_bin:*`.
+* Allow to define return value of `?*_` macroses in module-level by smth like
+  ```erlang
+  -define(GETTEXT_USE_BIN, true).
+  -include_lib("gettexter/include/shortcuts.hrl").
+  ```
+  and if `true`, in macroses replace `gettexter:*` calls to smth like `gettexter_bin:*`.
 
 * Don't use macroses for binary gettext lookups, but use direct `gettexter_bin:*`
-calls. Pros: don't need to add all of them to `xgettext`, since function names
-are the same for `gettexter:*` and `gettexter_bin:*`.
+  calls. Pros: don't need to add all of them to `xgettext`, since function names
+  are the same for `gettexter:*` and `gettexter_bin:*`.
