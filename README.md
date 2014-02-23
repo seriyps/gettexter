@@ -124,9 +124,15 @@ Gettext calls, which will search in a specific domain (namespace).
 gettexter:bindtextdomain(Domain :: atom(), LocaleDir :: file:filename()) -> ok.
 gettexter:bindtextdomain(LocaleDir :: file:filename()) -> ok.
 ```
-Setup directory from which .mo files will be loaded like `${LocaleDir}/${Locale}/LC_MESSAGES/${Domain}.mo`.
+Setup directory from which .mo files will be loaded like
+`${LocaleDir}/${Locale}/LC_MESSAGES/${Domain}.mo`.
 Domain **MUST** be specified for library applications (see `dgettext`).
+
 Default `Domain` is `application:get_application()`.
+Default `LocaleDir` is `filename:absname(filename:join(code:lib_dir(Domain), "locale"))`.
+If `LocaleDir` is relative, absolute path will be calculated, unlike original
+`gettext` does, but relative to `code:lib_dir(Domain)`.
+
 This function usualy called only once at application initialization/configuration phase.
 
 ```erlang
@@ -139,14 +145,21 @@ the `LocaleDir`s for each `Domain` (if not loaded yet).
 1'st argumet is currently reserved.
 
 ```erlang
+gettexter:textdomain() -> atom() | undefined.
 gettexter:textdomain(Domain :: atom()) -> ok.
 ```
-Set default domain (namespace) for **current process**.
+Get/Set default domain (namespace) for **current process**.
 If you call it like `textdomain(my_app)`, then `gettext(Key)` calls will be
 converted to `dgettext(my_app, Key)`.
 XXX: it's highly preferable to use `dgettext` directly and don't use this
 API function, if localized strings can be rendered in different processes.
 
+```erlang
+gettexter:bind_textdomin_codeset(Domain :: atom(), Charset :: string()) -> ok.
+```
+Set encoding, on which all `gettexter:*gettext` responses should be converted.
+This add significant performance overhead, and require 'iconv' dependency, if
+.po file's `Content-Type` and `Charset` isn't the same.
 
 XXX: Note, that `gettexter:gettext(Key)` call will be finally converted to
 `gettexter:dgettext(undefined, Key, undefined)`, which will try to extract
