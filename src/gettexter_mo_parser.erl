@@ -29,7 +29,7 @@
 %%% @end
 %%% Created :  3 Sep 2013 by Sergey Prokhorov <me@seriyps.ru>
 
--module(gtr_mo_parser).
+-module(gettexter_mo_parser).
 -export([parse/1, parse_file/1, to_dict/1]).
 -export_type([catalog/0, key/0, value/0]).
 
