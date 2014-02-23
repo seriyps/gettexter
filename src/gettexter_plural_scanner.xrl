@@ -22,14 +22,14 @@ plural : {token, {'plural', TokenLine}}.
 \% : {token, {'%', TokenLine}}.
 \== : {token, {'==', TokenLine}}.
 \!= : {token, {'!=', TokenLine}}.
-\! : {token, {'not', TokenLine}}.
+\! : {token, {'!', TokenLine}}.
 \= : {token, {'=', TokenLine}}.
 \+ : {token, {'+', TokenLine}}.
 \- : {token, {'-', TokenLine}}.
 
 % logical
-\|\| : {token, {'or', TokenLine}}.
-&& : {token, {'and', TokenLine}}.
+\|\| : {token, {'||', TokenLine}}.
+&& : {token, {'&&', TokenLine}}.
 \>= : {token, {'>=', TokenLine}}.
 \<= : {token, {'<=', TokenLine}}.
 \> : {token, {'>', TokenLine}}.

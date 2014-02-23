@@ -13,19 +13,19 @@ Terminals
     nplurals
     n
     plural
-    integer '=' ';' '?' ':' '%' 'not' '==' '!=' '+' '-' '*' '/'
-    'or' 'and' '>=' '<=' '>' '<' '(' ')'
+    integer '=' ';' '?' ':' '%' '!' '==' '!=' '+' '-' '*' '/'
+    '||' '&&' '>=' '<=' '>' '<' '(' ')'
 .
 
 Rootsymbol plural_rule.
 
-Unary 800 'not'.
+Unary 800 '!'.
 Left 700 '*' '/' '%'.
 Left 600 '+' '-'.
 Left 500 '<' '<=' '>' '>='.
 Left 400 '==' '!='.
-Left 300 'and'.
-Left 200  'or'.
+Left 300 '&&'.
+Left 200  '||'.
 Right 100 ternary_op.
 
 
@@ -49,14 +49,14 @@ bin_expr -> math_expr '+' math_expr : {value('$2'), '$1', '$3'}.
 bin_expr -> math_expr '-' math_expr : {value('$2'), '$1', '$3'}.
 bin_expr -> math_expr '/' math_expr : {value('$2'), '$1', '$3'}.
 bin_expr -> math_expr '*' math_expr : {value('$2'), '$1', '$3'}.
-bin_expr -> math_expr 'or' math_expr : {value('$2'), '$1', '$3'}.
-bin_expr -> math_expr 'and' math_expr : {value('$2'), '$1', '$3'}.
+bin_expr -> math_expr '||' math_expr : {value('$2'), '$1', '$3'}.
+bin_expr -> math_expr '&&' math_expr : {value('$2'), '$1', '$3'}.
 bin_expr -> math_expr '>=' math_expr : {value('$2'), '$1', '$3'}.
 bin_expr -> math_expr '<=' math_expr : {value('$2'), '$1', '$3'}.
 bin_expr -> math_expr '>' math_expr : {value('$2'), '$1', '$3'}.
 bin_expr -> math_expr '<' math_expr : {value('$2'), '$1', '$3'}.
 
-un_expr -> 'not' math_expr : {value('$1'), '$2'}.
+un_expr -> '!' math_expr : {value('$1'), '$2'}.
 
 Erlang code.
 value({Token, _Line}) ->
