@@ -2,6 +2,7 @@
 %%% @copyright (C) 2014, Sergey
 %%% @doc
 %%% Gettext plural form rule compiler and evaluator.
+%%% http://www.gnu.org/software/gettext/manual/html_node/Plural-forms.html
 %%% <pre><code>
 %%% Compiled = gettexter_plural:compile("nplurals=3; plural=...;"),
 %%% % ...store `Compiled' somwhere and reuse...
@@ -35,11 +36,11 @@
 
 -type opts() :: [{runtime_mod, atom()}  %module used for runtime calls 'to_boolean/1' and 'to_integer/1'
                 ].
-
--define(ES, erl_syntax).
--record(opts, {runtime_mod = ?MODULE}).
--record(plural_rule_compiled, {nplurals :: non_neg_integer(), %result, returned by to_erlang_abstract
+-record(plural_rule_compiled, {nplurals :: non_neg_integer(), %result, returned by compile/2
                                abstract_form :: erl_parse:abstract_form()}).
+
+-record(opts, {runtime_mod = ?MODULE}).
+-define(ES, erl_syntax).
 
 %% @doc
 %% Return number of plural forms for language. Value of 'nplurals' from
@@ -102,6 +103,7 @@ to_erlang_ast({plural_rule, _, Expr}, Opts) ->
 %% Converts output of `gettexter_plural_parser' to `erl_parse' abstract form.
 %% You, most probably, shouldn't call this from your programs.
 %% Return value may be interpreted by `erl_eval:expr/2' (see `plural/2').
+%% May be printed as erlang code snippet by `erl_prettypr` (see `to_erlang_code/2`).
 -spec to_erlang_abstract(plural_rule(), opts()) -> erl_parse:abstract_form().
 to_erlang_abstract({plural_rule, _, _}=Rule, Opts) ->
     erl_syntax:revert(to_erlang_ast(Rule, Opts)).
