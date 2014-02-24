@@ -130,7 +130,6 @@ to_erl_math_expr({'if', Cond, Then, Else}, Opts) ->
     %% Cond ? Then : Else
     %% to
     %% case to_boolean(Cond) of true -> Then; false -> Else end.
-    %TODO: use `(V == false) orelse (V == 0)` as guard for Else.
     ?ES:case_expr(
        ?ES:application(
           ?ES:atom(Opts#opts.runtime_mod),
@@ -164,6 +163,8 @@ to_erl_math_expr(Integer, _) when is_integer(Integer) andalso (Integer >= 0) ->
 to_erl_math_expr({Op, L, R}, Opts) when is_atom(Op) ->
     {InfOp, ArgType} = to_erl_bin_expr(Op),
     Convert = fun(A) ->
+                      %% TODO: optimization - don't apply to constants, like
+                      %% to_integer(5) or to_integer(N)
                       ?ES:application(
                          ?ES:atom(Opts#opts.runtime_mod),
                          ?ES:atom(ArgType),
