@@ -26,7 +26,7 @@ Left 500 '<' '<=' '>' '>='.
 Left 400 '==' '!='.
 Left 300 '&&'.
 Left 200  '||'.
-Right 100 ternary_op.
+Right 100 '?'.  % ternary operator
 
 
 plural_rule -> nplurals '=' integer ';' plural '=' math_expr ';' : {plural_rule, value('$3'), '$7'}.
@@ -42,15 +42,17 @@ ternary_op -> math_expr '?' math_expr ':' math_expr : {'if', '$1', '$3', '$5'}.
 operand -> n : n.
 operand -> integer : value('$1').
 
-bin_expr -> math_expr '%' math_expr : {value('$2'), '$1', '$3'}.
+% bool
+bin_expr -> math_expr '||' math_expr : {value('$2'), '$1', '$3'}.
+bin_expr -> math_expr '&&' math_expr : {value('$2'), '$1', '$3'}.
+% integer
 bin_expr -> math_expr '==' math_expr : {value('$2'), '$1', '$3'}.
 bin_expr -> math_expr '!=' math_expr : {value('$2'), '$1', '$3'}.
+bin_expr -> math_expr '%' math_expr : {value('$2'), '$1', '$3'}.
 bin_expr -> math_expr '+' math_expr : {value('$2'), '$1', '$3'}.
 bin_expr -> math_expr '-' math_expr : {value('$2'), '$1', '$3'}.
 bin_expr -> math_expr '/' math_expr : {value('$2'), '$1', '$3'}.
 bin_expr -> math_expr '*' math_expr : {value('$2'), '$1', '$3'}.
-bin_expr -> math_expr '||' math_expr : {value('$2'), '$1', '$3'}.
-bin_expr -> math_expr '&&' math_expr : {value('$2'), '$1', '$3'}.
 bin_expr -> math_expr '>=' math_expr : {value('$2'), '$1', '$3'}.
 bin_expr -> math_expr '<=' math_expr : {value('$2'), '$1', '$3'}.
 bin_expr -> math_expr '>' math_expr : {value('$2'), '$1', '$3'}.
