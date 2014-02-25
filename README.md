@@ -122,27 +122,26 @@ Gettext calls, which will search in a specific domain (namespace).
 
 ```erlang
 gettexter:bindtextdomain(Domain :: atom(), LocaleDir :: file:filename()) -> ok.
-gettexter:bindtextdomain(LocaleDir :: file:filename()) -> ok.
 ```
 Setup directory from which .mo files will be loaded like
 `${LocaleDir}/${Locale}/LC_MESSAGES/${Domain}.mo`.
 Domain **MUST** be specified for library applications (see `dgettext`).
 
-Default `Domain` is `application:get_application()`.
-Default `LocaleDir` is `filename:absname(filename:join(code:lib_dir(Domain), "locale"))`.
+By default, `Domain` is `application:get_application()` and `LocaleDir` is
+`filename:absname(filename:join(code:lib_dir(Domain), "locale"))`.
 If `LocaleDir` is relative, absolute path will be calculated, unlike original
-`gettext` does, but relative to `code:lib_dir(Domain)`.
+`gettext` does (relative to cwd), but relative to `code:lib_dir(Domain)`.
 
 This function usualy called only once at application initialization/configuration phase.
 
 ```erlang
-gettexter:setlocale(undefined, Locale :: string()) -> {ok, string()}.
-gettexter:setlocale(undefined, Locale :: string()) -> {ok, string()}.
+gettexter:setlocale(lc_messages, Locale :: string()) -> ok.
+gettexter:getlocale(lc_messages) -> string() | undefined.
 ```
-Set default locale for **current process**, returning opaque string, which may be
-used to restore exactly this locale in future. It also loads .mo files for `Locale` from
-the `LocaleDir`s for each `Domain` (if not loaded yet).
-1'st argumet is currently reserved.
+Get / Set default locale for **current process**. It also loads .mo files for
+`Locale` from the `LocaleDir`s for each `Domain` (if not loaded yet).
+1'st argumet currently has only one value - `lc_messages` atom.
+*Note: `getlocale` is not standard GNU gettext function.*
 
 ```erlang
 gettexter:textdomain() -> atom() | undefined.
@@ -155,14 +154,14 @@ XXX: it's highly preferable to use `dgettext` directly and don't use this
 API function, if localized strings can be rendered in different processes.
 
 ```erlang
-gettexter:bind_textdomin_codeset(Domain :: atom(), Charset :: string()) -> ok.
+gettexter:bind_textdomain_codeset(Domain :: atom(), Charset :: string()) -> ok.
 ```
 Set encoding, on which all `gettexter:*gettext` responses should be converted.
 This add significant performance overhead, and require 'iconv' dependency, if
 .po file's `Content-Type` and `Charset` isn't the same.
 
 XXX: Note, that `gettexter:gettext(Key)` call will be finally converted to
-`gettexter:dgettext(undefined, Key, undefined)`, which will try to extract
+`gettexter:dpgettext(undefined, undefined, Key)`, which will try to extract
 `Domain` and `Locale` from current process dictionary.
 
 XXX: When developing library, you may want to re-define `?_`, `?N_`, `?P_` macroses
@@ -173,8 +172,18 @@ You can do this by following trick:
 -define(GETTEXT_DOMAIN, my_domain).
 -include_lib("gettexter/include/shortcuts.hrl").
 ```
-This will modify macroses (except `?_D*`) to use `my_domain` by default.
+This will modify macroses (except `?_D*`) to use `d*gettext(my_domain, ...)` by default.
 
+Glossary
+--------
+
+* Domain: namespace for translations. In practice, the name of .po/.mo file, which
+          in most cases, named as your OTP application.
+* Locale: not strictly speaking, just name of translation's language, like "en",
+          "en_GB", "ru", "pt_BR", etc. Usualy Locale contains also rules of
+          plural form calculation, date/time/number formatting, currency etc.
+* LC_MESSAGES: locale category, which contains translated application's strings in
+          (.mo/.po format).
 
 TODO
 ----
