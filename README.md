@@ -174,6 +174,36 @@ You can do this by following trick:
 ```
 This will modify macroses (except `?_D*`) to use `d*gettext(my_domain, ...)` by default.
 
+### Proprietary APIs
+
+This apis has no GNU gettext equiualents, but may be useful in Erlang apps.
+
+```erlang
+gettexter:which_domains(Locale) -> [atom()].
+```
+Which domains are loaded from .mo files to gettext server for `Locale'.
+
+```erlang
+gettexter:which_locales(Domain) -> [string()].
+```
+Which locales are loaded from .mo files to gettext server for `Domain'.
+
+```erlang
+gettexter:ensure_loaded(TextDomain, lc_messages, Locale) ->
+    {ok, already | file:filename()} | {error, term()}.
+```
+Ensure, that locale is loaded from .mo file to gettexter server. If locale
+isn't loaded, all `gettext' lookups to it will return default value `Msgid'.
+This function may be called at application start-up or configuration time,
+once for each supported locale.
+
+```erlang
+gettexter:reset() -> ok.
+```
+Remove all gettext stuff, added by `setlocale` or `textdomain`, from process
+dictionary (but not from locale data storage). May be used to reuse process
+for the next client.
+
 Glossary
 --------
 
