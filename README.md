@@ -38,17 +38,18 @@ Mark your translatable strings with:
 -define(GETTEXT_DOMAIN, my_app).
 -include_lib("gettexter/include/shortcuts.hrl").
 
-main(Name, What) ->
-    gettexter:bindtextdomain(?GETTEXT_DOMAIN, "/.../locales"), % from where load locales
-    gettexter:setlocale(undefined, "en"),  % locale for current process
+main(Name, What, N) ->
+    gettexter:bindtextdomain(?GETTEXT_DOMAIN, "/../locales"), % from where load locales
     gettexter:textdomain(?GETTEXT_DOMAIN), % domain for current process
+    gettexter:setlocale(lc_messages, "en"),  % locale for current process
 
     Question = case What of
                  sleep -> ?NO_("Wanna sleep?");
-                 eat -> ?NO_(<<"Wanna eat?">>)
+                 eat -> ?NO_("Wanna eat?")
                end,
+    Time = io_lib:format(?N_("It's ~p hour", "It's ~p hours", N)),
     %% /* Translators: this is hello message */
-    io:format(?_("Hello, ~p! ~ts"), [Name, ?_(Question)]).
+    io:format(?_("Hello, ~p! ~ts. ~ts"), [Name, Time, ?_(Question)]).
 ```
 
 Extract messages from sources to .pot file by `xgettext` command
@@ -56,40 +57,41 @@ Extract messages from sources to .pot file by `xgettext` command
 ```bash
 export APP=my_app
 
-xgettext -o locales/${APP}.pot --package-name=${APP} -d ${APP} --sort-by-file -L C \
-     --keyword='NO_' --keyword='_' --keyword='N_:1,2' \
-     --keyword='P_:1c,2' --keyword='NP_:1c,2,3' \
-     --keyword='D_:2' --keyword='DN_:2,3' --keyword='DP_:2c,3' --keyword='DNP_:2c,3,4' \
-     --add-comments=Translators \
-     src/my_module.erl src/*.erl
+xgettext -o locale/${APP}.pot --package-name=${APP} -d ${APP} --sort-by-file -L C \
+    --keyword='NO_' --keyword='_' --keyword='N_:1,2' \
+    --keyword='P_:1c,2' --keyword='NP_:1c,2,3' \
+    --keyword='D_:2' --keyword='DN_:2,3' --keyword='DP_:2c,3' --keyword='DNP_:2c,3,4' \
+    --add-comments=Translators \
+    src/my_module.erl src/*.erl
 ```
 
 Initialize new locale's .po file by `msginit`
 
 ```bash
-mkdir -p locales/ru/LC_MESSAGES/
-msginit -i locales/${APP}.pot -o locales/ru/LC_MESSAGES/${APP}.po --locale=ru
+mkdir -p locale/ru/LC_MESSAGES/
+msginit -i locale/${APP}.pot -o locale/ru/LC_MESSAGES/${APP}.po --locale=ru
 ```
 
 Or actualize existing locale's .po file by `msgmerge`
 
 ```bash
-msgmerge -U locales/ru/LC_MESSAGES/${APP}.po locales/${APP}.pot
+msgmerge -U locale/ru/LC_MESSAGES/${APP}.po locale/${APP}.pot
 ```
 
 When translations are finished, generate locale's binary .mo files by `msgfmt`
 
 ```bash
-msgfmt --check -o locales/ru/LC_MESSAGES/${APP}.mo locales/ru/LC_MESSAGES/${APP}.po
+msgfmt --check -o locale/ru/LC_MESSAGES/${APP}.mo locale/ru/LC_MESSAGES/${APP}.po
 ```
-It's **strongly recommended** to not add .mo files to your repository (eg, add
-`*.mo` to .gitignore / .hgignore) and generate them in compile-time (by rebar
+It's **strongly recommended** to not add .mo files to your repository! So, add
+`*.mo` to .gitignore / .hgignore and generate them in compile-time (by rebar
 post-compile hook or so).
 
 API
 ---
 
 Api tries to be compatible with [GNU gettext API](http://www.gnu.org/software/gettext/manual/gettext.html#gettext).
+If you find some discrepancy (not explicitly documented) - please report.
 
 ### Gettext lookups
 
@@ -113,7 +115,7 @@ Gettext calls with respect to `msgctx`
 
 ```erlang
 gettexter:dgettext(Domain :: atom(), string()) -> string().  % '?D_'
-% and other 'gettexter:d{n,p,pn}gettext'
+% and other 'gettexter:d{n,p,pn}gettext' plus '?D*_' macroses
 ```
 Gettext calls, which will search in a specific domain (namespace).
 (See `bindtextdomain`).
@@ -245,3 +247,10 @@ Expression, `?_(<<"...">>)` is not well handled by `xgettext`, so, variants:
 
 Maybe allow `bindtextdomain/2` 2'nd argument be a `{M, F, A}` or `fun M:F/N` to
 allow locale loading customization?
+
+### Generate .beam module with compiled-in locales for extra-fast access.
+
+Since ETS lookups require heap copying, smth like static .beam module with
+compiled-in phrases and plural rules (!!!) may  be generated.
+Pros: extra fast access speed; no memory copying; compiled plural rules.
+Cons: slow update; hackish.
