@@ -132,6 +132,9 @@ By default, `Domain` is `application:get_application()` and `LocaleDir` is
 If `LocaleDir` is relative, absolute path will be calculated, unlike original
 `gettext` does (relative to cwd), but relative to `code:lib_dir(Domain)`.
 
+This function don't reload already loaded locales for `Domain`, so, should be called
+before `setlocale` or `ensure_loaded` calls.
+
 This function usualy called only once at application initialization/configuration phase.
 
 ```erlang
@@ -193,9 +196,11 @@ gettexter:ensure_loaded(TextDomain, lc_messages, Locale) ->
     {ok, already | file:filename()} | {error, term()}.
 ```
 Ensure, that locale is loaded from .mo file to gettexter server. If locale
-isn't loaded, all `gettext' lookups to it will return default value `Msgid'.
+isn't loaded, all `gettext` lookups to it will return default value `Msgid`.
 This function may be called at application start-up or configuration time,
 once for each supported locale.
+In case of error, all data for this combination of `Domain` and `Locale` will
+be removed from gettexter server to avoid incomplete/broken data.
 
 ```erlang
 gettexter:reset() -> ok.
@@ -212,11 +217,13 @@ Glossary
 * Locale: not strictly speaking, just name of translation's language, like "en",
           "en_GB", "ru", "pt_BR", etc. Usualy Locale contains also rules of
           plural form calculation, date/time/number formatting, currency etc.
-* LC_MESSAGES: locale category, which contains translated application's strings in
-          (.mo/.po format).
+* LC_MESSAGES: locale category, which contains translated application's strings (in
+          .mo/.po format).
 
 TODO
 ----
+
+### Binary keys
 
 Expression, `?_(<<"...">>)` is not well handled by `xgettext`, so, variants:
 
@@ -233,3 +240,8 @@ Expression, `?_(<<"...">>)` is not well handled by `xgettext`, so, variants:
 * Don't use macroses for binary gettext lookups, but use direct `gettexter_bin:*`
   calls. Pros: don't need to add all of them to `xgettext`, since function names
   are the same for `gettexter:*` and `gettexter_bin:*`.
+
+### Custom locale loaders
+
+Maybe allow `bindtextdomain/2` 2'nd argument be a `{M, F, A}` or `fun M:F/N` to
+allow locale loading customization?

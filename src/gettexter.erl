@@ -59,7 +59,8 @@ setlocale(Category=lc_messages, Locale) ->
     TextDomain = textdomain(),
     true = (TextDomain =/= undefined),          %assert
     put({?MODULE, locale, TextDomain, Category}, Locale),
-    gettexter_server:ensure_loaded(TextDomain, Category, Locale).
+    {ok, _} = gettexter_server:ensure_loaded(TextDomain, Category, Locale),
+    ok.
 
 -spec getlocale(atom()) -> string() | undefined.
 getlocale(Category=lc_messages) ->
@@ -82,11 +83,13 @@ bind_textdomain_codeset(_Domain, _Charset) ->
 
 %% @doc
 %% Which domains are loaded for `Locale'.
+-spec which_domains(string()) -> [atom()].
 which_domains(Locale) ->
     gettexter_server:which_domains(Locale).
 
 %% @doc
 %% Which locales are loaded for `Domain'.
+-spec which_locales(atom()) -> [string()].
 which_locales(Domain) ->
     gettexter_server:which_locales(Domain).
 
@@ -95,6 +98,7 @@ which_locales(Domain) ->
 %% isn't loaded, all `gettext' lookups to it will return default value `Msgid'.
 %% This function may be called at application start-up or configuration time,
 %% once for each supported locale.
+-spec ensure_loaded(atom(), lc_messages, string()) -> {ok, already | file:filename()} | {error, term()}.
 ensure_loaded(TextDomain, Category=lc_messages, Locale) ->
     gettexterer_server:ensure_loaded(TextDomain, Category, Locale).
 

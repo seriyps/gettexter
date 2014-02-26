@@ -24,5 +24,6 @@ start_link() ->
 %% ===================================================================
 
 init([]) ->
-    {ok, { {one_for_one, 5, 10}, []} }.
+    Childs = [?CHILD(gettexter_server, worker)],
+    {ok, { {one_for_one, 5, 10}, Childs} }.
 
