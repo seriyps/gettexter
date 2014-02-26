@@ -100,7 +100,7 @@ which_locales(Domain) ->
 %% once for each supported locale.
 -spec ensure_loaded(atom(), lc_messages, string()) -> {ok, already | file:filename()} | {error, term()}.
 ensure_loaded(TextDomain, Category=lc_messages, Locale) ->
-    gettexterer_server:ensure_loaded(TextDomain, Category, Locale).
+    gettexter_server:ensure_loaded(TextDomain, Category, Locale).
 
 %% @doc
 %% Remove all gettext stuff from process dictionary (but not from locale data storage).

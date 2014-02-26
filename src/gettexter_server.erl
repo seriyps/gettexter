@@ -130,7 +130,6 @@ load_locale(Tab, Domain, Locale) ->
                  end,
     AbsBinding = filename:absname(Binding),
     MoFileName = filename:join([AbsBinding, Locale, "LC_MESSAGES", atom_to_list(Domain) ++ ".mo"]),
-    io:format(".mo file is ~ts~n", [MoFileName]),
     %% extract messages from .mo
     Parsed = gettexter_mo_parser:parse_file(MoFileName),
     Catalog = gettexter_mo_parser:to_dict(Parsed),
