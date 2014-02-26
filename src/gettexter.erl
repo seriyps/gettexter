@@ -17,7 +17,7 @@
 
 %% Lookup APIs
 gettext(Msgid) -> dpgettext(undefined, undefined, Msgid).
-ngettext(Singular, Plural, N) -> dnpgettext(undefinned, undefined, Singular, Plural, N).
+ngettext(Singular, Plural, N) -> dnpgettext(undefined, undefined, Singular, Plural, N).
 pgettext(Context, Msgid) -> dpgettext(undefined, Context, Msgid).
 npgettext(Context, Singular, Plural, N) -> dnpgettext(undefined, Context, Singular, Plural, N).
 
