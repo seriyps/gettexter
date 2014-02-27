@@ -47,7 +47,7 @@ main(Name, What, N) ->
                  sleep -> ?NO_("Wanna sleep?");
                  eat -> ?NO_("Wanna eat?")
                end,
-    Time = io_lib:format(?N_("It's ~p hour", "It's ~p hours", N)),
+    Time = io_lib:format(?N_("It's ~p hour", "It's ~p hours", N), [N]),
     %% /* Translators: this is hello message */
     io:format(?_("Hello, ~p! ~ts. ~ts"), [Name, Time, ?_(Question)]).
 ```
@@ -111,7 +111,7 @@ gettexter:pgettext(Context :: string(), string()) -> string().  % '?P_'
 gettexter:pngettext(Context :: string(), string(), string(),
                     integer()) -> string().  % '?PN_'
 ```
-Gettext calls with respect to `msgctx`
+Gettext calls with respect to `msgctx` ('p' means 'particular').
 
 ```erlang
 gettexter:dgettext(Domain :: atom(), string()) -> string().  % '?D_'
@@ -186,16 +186,16 @@ This apis has no GNU gettext equiualents, but may be useful in Erlang apps.
 ```erlang
 gettexter:which_domains(Locale) -> [atom()].
 ```
-Which domains are loaded from .mo files to gettext server for `Locale'.
+Which domains are loaded from .mo files to gettext server for `Locale`.
 
 ```erlang
 gettexter:which_locales(Domain) -> [string()].
 ```
-Which locales are loaded from .mo files to gettext server for `Domain'.
+Which locales are loaded from .mo files to gettext server for `Domain`.
 
 ```erlang
 gettexter:ensure_loaded(TextDomain, lc_messages, Locale) ->
-    {ok, already | file:filename()} | {error, term()}.
+    {ok, already} | {ok, MoFile :: file:filename()} | {error, term()}.
 ```
 Ensure, that locale is loaded from .mo file to gettexter server. If locale
 isn't loaded, all `gettext` lookups to it will return default value `Msgid`.
@@ -254,3 +254,10 @@ Since ETS lookups require heap copying, smth like static .beam module with
 compiled-in phrases and plural rules (!!!) may  be generated.
 Pros: extra fast access speed; no memory copying; compiled plural rules.
 Cons: slow update; hackish.
+
+
+### Add lookup functions with force locale spec (no process dictionary).
+
+This may be especialy useful for asynchronous processes, when single process
+serve many clients somehow. Or when many processes participate in request
+handling. Plus, process dictionary is considered as bad practice.
