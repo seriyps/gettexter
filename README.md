@@ -222,6 +222,86 @@ Glossary
 * LC_MESSAGES: locale category, which contains translated application's strings (in
           .mo/.po format).
 
+Use with ErlyDTL
+----------------
+
+[Erlydtl](http://github.com/erlydtl/erlydtl) >= 0.9.4 supports plural forms and contexts.
+So, you can use all gettexter features with it. To enable translation features of
+erlydtl, you should wrap all translatable strings in `{%trans%}`, `{%blocktrans%}` and `_()`,
+generate .po and .mo files and then pass `translation_fun` and `locales` in compile-time, or
+`translation_fun` and `locale` in render-time.
+
+Example `translation_fun`:
+
+```erlang
+% setlocale calls may be skipped, if you call it once before template rendering
+TransFun = fun({Str, {StrPlural, N}}, {Locale, Ctx}) ->
+               gettexter:setlocale(lc_messages, Locale),
+               gettexter:pngettext(Ctx, Str, StrPlural, N);
+              ({Str, {StrPlural, N}}, Locale) ->
+               gettexter:setlocale(lc_messages, Locale),
+               gettexter:ngettext(Str, StrPlural, N);
+              (Str, {Locale, Ctx}) ->
+               gettexter:setlocale(lc_messages, Locale),
+               gettexter:pgettext(Ctx, Str);
+              (Str, Locale) ->
+               gettexter:setlocale(lc_messages, Locale),
+               gettexter:gettext(Str)
+           end.
+```
+
+Template:
+```django
+{# file: src/tpl.dtl #}
+{%trans "Hello"%}
+{%trans "Hello" context "ctx"%}
+{% blocktrans count cnt=cnt %}Apple{%plural%}Apples{%endblocktrans%}
+```
+.po file
+```po
+#file: locale/ru/LC_MESSAGES/test_app.po + compiled .mo
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=utf-8\n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
+"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+
+msgid "Hello"
+msgstr "Привет"
+
+msgctxt "ctx"
+msgid "Hello"
+msgstr "Контекстный привет"
+
+msgid "Apple"
+msgid_plural "Apples"
+msgstr[0] "Яблоко"
+msgstr[1] "Яблока"
+msgstr[2] "Яблок"
+```
+Code:
+```erlang
+1> application:start(gettexter).
+2> Domain = test_app.
+3> % next step may be skipped, if `code:lib_dir(Domain)` is ok (if Domain is appname)
+3> gettexter:bindtextdomain(Domain, </path/to/app/root> ++ "/locale").
+4> gettexter:textdomain(Domain).
+5> erlydtl:compile_file("src/tpl.dtl", t).
+6> TransFun = '....'. % see above
+7> {ok, R} = t:render(),  io:format("~ts~n", [iolist_to_binary(R)]).
+Hello
+Hello
+
+Apple
+8> {ok, R1} = t:render([{cnt, 2}], [{locale, "ru"}, {translation_fun, TransFun}]).
+9> io:format("~ts~n", [iolist_to_binary(R1)]).
+Привет
+Контекстный привет
+
+Яблока
+
+```
+
 TODO
 ----
 
