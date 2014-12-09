@@ -114,14 +114,18 @@ handle_info(_Info, State) ->
 terminate(_Reason, _State) ->
     ok.
 code_change(_OldVsn, State, _Extra) ->
-    {ok, State}.
+            {ok, State}.
 
 %% Internal
 
 load_locale(Tab, Domain, Locale) ->
     Binding = case ets:lookup(Tab, ?BINDING_KEY(Domain)) of
-                  []          -> "locale";
-                  [{_, Path}] -> Path
+                  [] ->
+                      filename:join(code:lib_dir(Domain), "locale");
+                  [{_, AbsPath = "/" ++ _}] ->
+                      AbsPath;
+                  [{_, RelPath}] ->
+                      filename:join(code:lib_dir(Domain), RelPath)
               end,
     AbsBinding = filename:absname(Binding),
     MoFileName = filename:join([AbsBinding, Locale, "LC_MESSAGES", atom_to_list(Domain) ++ ".mo"]),
@@ -172,7 +176,7 @@ load_plural_rule(Tab, Domain, Locale, Headers) ->
     end.
 
 unload_locale(Tab, Domain, Locale) ->
-    true = ets:match_delete(Tab, {?PLURAL_MSG_KEY(Domain, Locale, '_', '_', '_','_'), '_'}),
+    true = ets:match_delete(Tab, {?PLURAL_MSG_KEY(Domain, Locale, '_', '_', '_', '_'), '_'}),
     true = ets:match_delete(Tab, {?HEADER_KEY(Domain, Locale, '_'), '_'}),
     true = ets:match_delete(Tab, {?PLURAL_RULE_KEY(Domain, Locale), '_'}),
     true = ets:match_delete(Tab, {?LOADED_KEY(Domain, Locale), '_'}),

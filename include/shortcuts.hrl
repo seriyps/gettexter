@@ -48,10 +48,9 @@
 
 %%% Explicit domain
 -define(D_(Domain, Text, Locale),
-            gettexter:dpgettext(Domain, undefined, Text, Locale)).
+            gettexter:dgettext(Domain, Text, Locale)).
 -define(DN_(Domain, Singular, Plural, N, Locale),
-            gettexter:dnpgettext(Domain, undefined, Singular, Plural, N,
-                                 Locale)).
+            gettexter:dngettext(Domain, Singular, Plural, N, Locale)).
 -define(DP_(Domain, Context, Text, Locale),
             gettexter:dpgettext(Domain, Context, Text, Locale)).
 -define(DNP_(Domain, Context, Singular, Plural, N, Locale),

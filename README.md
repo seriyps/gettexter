@@ -52,7 +52,8 @@ main(Name, What, N) ->
     io:format(?_("Hello, ~p! ~ts. ~ts"), [Name, Time, ?_(Question)]).
 ```
 
-Extract messages from sources to .pot file by `xgettext` command
+Extract messages from sources to .pot file by `xgettext` command. Take note
+that this only work for string literals and not binaries.
 
 ```bash
 export APP=my_app
@@ -94,27 +95,34 @@ Api tries to be compatible with [GNU gettext API](http://www.gnu.org/software/ge
 If you find some discrepancy (not explicitly documented) - please report.
 
 ### Gettext lookups
+All lookup functions are able to take both binaries or strings. They will
+return what is given to them. Mixed textual types is not supported. 
+
+A locale may be loaded as an atom, binary or string. But after load they are
+not interchangable. Thus locale sv will be distinct from <<"sv">>.
+
+For more information see the documentation.
 
 ```erlang
-gettexter:gettext(string()) -> string().  % '?_' macro
+gettexter:gettext(text()) -> text().  % '?_' macro
 ```
 Main gettext call. Uses locale, activated by `setlocale/2`.
 
 ```erlang
-gettexter:ngettext(Singular :: string(), Plural :: string(),
-                   Count :: integer()) -> string().  % '?N_' macro
+gettexter:ngettext(Singular :: text(), Plural :: text(),
+                   Count :: integer()) -> text().  % '?N_' macro
 ```
 Plural gettext call.
 
 ```erlang
-gettexter:pgettext(Context :: string(), string()) -> string().  % '?P_'
-gettexter:pngettext(Context :: string(), string(), string(),
-                    integer()) -> string().  % '?PN_'
+gettexter:pgettext(Context :: text(), text()) -> text().  % '?P_'
+gettexter:pngettext(Context :: text(), text(), text(),
+                    integer()) -> text().  % '?PN_'
 ```
 Gettext calls with respect to `msgctx` ('p' means 'particular').
 
 ```erlang
-gettexter:dgettext(Domain :: atom(), string()) -> string().  % '?D_'
+gettexter:dgettext(Domain :: atom(), text()) -> text().  % '?D_'
 % and other 'gettexter:d{n,p,pn}gettext' plus '?D*_' macroses
 ```
 Gettext calls, which will search in a specific domain (namespace).
@@ -140,8 +148,8 @@ before `setlocale` or `ensure_loaded` calls.
 This function usualy called only once at application initialization/configuration phase.
 
 ```erlang
-gettexter:setlocale(lc_messages, Locale :: string()) -> ok.
-gettexter:getlocale(lc_messages) -> string() | undefined.
+gettexter:setlocale(lc_messages, Locale :: text()) -> ok.
+gettexter:getlocale(lc_messages) -> text() | undefined.
 ```
 Get / Set default locale for **current process**. It also loads .mo files for
 `Locale` from the `LocaleDir`s for each `Domain` (if not loaded yet).
@@ -189,7 +197,7 @@ gettexter:which_domains(Locale) -> [atom()].
 Which domains are loaded from .mo files to gettext server for `Locale`.
 
 ```erlang
-gettexter:which_locales(Domain) -> [string()].
+gettexter:which_locales(Domain) -> [locale()].
 ```
 Which locales are loaded from .mo files to gettext server for `Domain`.
 

@@ -1,6 +1,7 @@
 %%% @author Sergey Prokhorov <me@seriyps.ru>
-%%% @author Emil Falk <emil.falk@riseup.net>
+%%% @author Emil Falk <emil.falk@textalk.se>
 %% @copyright (C) 2014, Sergey Prokhorov
+%% @copyright (C) 2014, Emil Falk
 %% @doc
 %% == gettexter ==
 %%
@@ -165,7 +166,7 @@ dpgettext(Domain, Context, Text) ->
                 Text :: Type, Locale :: locale()) -> Type when Type :: text().
 %% binary case
 dpgettext(Domain, Context, Text, Locale)
-  when Context == undefined, is_binary(Text);
+  when (Context == undefined andalso is_binary(Text)) orelse
        is_binary(Context) ->
     case gettexter_server:dpgettext(Domain, Locale, Context, Text) of
         undefined   -> Text;
