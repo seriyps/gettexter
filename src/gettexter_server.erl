@@ -11,7 +11,7 @@
 -export([start_link/0]).
 -export([dpgettext/4, dnpgettext/6]).
 -export([bindtextdomain/2]).
--export([ensure_loaded/3, which_domains/1, which_locales/1, which_loaded/0, header/3]).
+-export([ensure_loaded/3, which_domains/1, which_locales/1, which_loaded/0,header/3]).
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
@@ -21,10 +21,10 @@
 -define(TAB, gettexter_server_ets).
 
 %% ETS key types
--define(MSG_KEY(Domain, Locale, Context, Msgid),
-        ?PLURAL_MSG_KEY(Domain, Locale, Context, Msgid, undefined)).
--define(PLURAL_MSG_KEY(Domain, Locale, Context, Singular, Plural),
-        {msg, Domain, Locale, Context, Singular, Plural}). %XXX: maybe store each plural form in separate object? More RAM, but faster retrieval.
+-define(MSG_KEY(Domain, Locale, Context, Text),
+        ?PLURAL_MSG_KEY(Domain, Locale, Context, Text, undefined, -1)).
+-define(PLURAL_MSG_KEY(Domain, Locale, Context, Singular, Plural, Form),
+        {msg, Domain, Locale, Context, Singular, Plural, Form}).
 -define(PLURAL_RULE_KEY(Domain, Locale), {plural_rule, Domain, Locale}).
 -define(HEADER_KEY(Domain, Locale, Name), {hdr, Domain, Locale, Name}).
 -define(LOADED_KEY(Domain, Locale), {loaded, Domain, Locale}).
@@ -37,21 +37,22 @@
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
-dpgettext(Domain, Context, Locale, Msgid) ->
-    case ets:lookup(?TAB, ?MSG_KEY(Domain, Locale, Context, Msgid)) of
-        [] -> undefined;
-        [{_, [Msgstr]}] -> Msgstr
+dpgettext(Domain, Context, Locale, Text) ->
+    case ets:lookup(?TAB, ?MSG_KEY(Domain, Locale, Context, Text)) of
+        []                 -> undefined;
+        [{_, Translation}] -> Translation
     end.
 
 dnpgettext(Domain, Context, Locale, Singular, Plural, N) ->
     case ets:lookup(?TAB, ?PLURAL_RULE_KEY(Domain, Locale)) of
-        [] -> undefined;
+        []                  -> undefined;
         [{_, CompiledRule}] ->
-            case ets:lookup(?TAB, ?PLURAL_MSG_KEY(Domain, Locale, Context, Singular, Plural)) of
-                [] -> undefined;
-                [{_, Messages}] ->
-                    Form = gettexter_plural:plural(N, CompiledRule),
-                    lists:nth(Form + 1, Messages)
+            Form = gettexter_plural:plural(N, CompiledRule),
+            PluralKey = ?PLURAL_MSG_KEY(Domain, Locale, Context, Singular,
+                                        Plural, Form),
+            case ets:lookup(?TAB, PluralKey) of
+                []                 -> undefined;
+                [{_, Translation}] -> Translation
             end
     end.
 
@@ -61,9 +62,8 @@ bindtextdomain(Domain, LocaleDir) ->
 
 ensure_loaded(TextDomain, _Category, Locale) ->
     case ets:member(?TAB, ?LOADED_KEY(TextDomain, Locale)) of
-        true -> {ok, already};
-        false ->
-            gen_server:call(?SERVER, {ensure_loaded, TextDomain, Locale})
+        true  -> {ok, already};
+        false -> gen_server:call(?SERVER, {ensure_loaded, TextDomain, Locale})
     end.
 
 which_domains(Locale) ->
@@ -77,7 +77,7 @@ which_loaded() ->
 
 header(Domain, Locale, Name) ->
     case ets:lookup(?TAB, ?HEADER_KEY(Domain, Locale, Name)) of
-        [] -> undefined;
+        []           -> undefined;
         [{_, Value}] -> Value
     end.
 
@@ -100,8 +100,9 @@ handle_call({ensure_loaded, Domain, Locale}, _From, State) ->
                     try
                         load_locale(?TAB, Domain, Locale)
                     catch Type:Reason ->
-                            catch unload_locale(?TAB, Domain, Locale), % cleanup possible partial load
-                            {error, {Type, Reason, erlang:get_stacktrace()}}
+                              % cleanup possible partial load
+                              catch unload_locale(?TAB, Domain, Locale),
+                              {error, {Type, Reason, erlang:get_stacktrace()}}
                     end
             end,
     {reply, Reply, State}.
@@ -118,36 +119,33 @@ code_change(_OldVsn, State, _Extra) ->
 %% Internal
 
 load_locale(Tab, Domain, Locale) ->
-    %% code:lib_dir/1 may return {error, ...}, so this should be wrapped by try...catch
-    %% calculate path to .mo file
     Binding = case ets:lookup(Tab, ?BINDING_KEY(Domain)) of
-                  [] ->
-                      filename:join(code:lib_dir(Domain), "locale");
-                  [{_, AbsPath = "/" ++ _}] ->
-                      AbsPath;
-                  [{_, RelPath}] ->
-                        filename:join(code:lib_dir(Domain), RelPath)
-                 end,
+                  []          -> "locale";
+                  [{_, Path}] -> Path
+              end,
     AbsBinding = filename:absname(Binding),
     MoFileName = filename:join([AbsBinding, Locale, "LC_MESSAGES", atom_to_list(Domain) ++ ".mo"]),
     %% extract messages from .mo
     Parsed = gettexter_mo_parser:parse_file(MoFileName),
     Catalog = gettexter_mo_parser:to_dict(Parsed),
     %% fill ETS table
-    B2LIfNotNull = fun(undefined) -> undefined;
-                      (V) -> binary_to_list(V)
-                   end,
-    Headers = lists:foldl(fun({{<<"">>, undefined, _}, [MimeData]}, undefined) ->
-                                  parse_headers(MimeData);
-                             ({{Singular, Plural, Context}, Values}, MD) ->
-                                  Ob = {?PLURAL_MSG_KEY(Domain, Locale,
-                                                        B2LIfNotNull(Context),
-                                                        B2LIfNotNull(Singular),
-                                                        B2LIfNotNull(Plural)),
-                                        lists:map(fun erlang:binary_to_list/1, Values)},
-                                  true = ets:insert(Tab, Ob),
-                                  MD
-                          end, undefined, Catalog),
+    Headers = lists:foldl(
+                fun({{<<"">>, undefined, _}, [MimeData]}, undefined) ->
+                        parse_headers(MimeData);
+                   ({{Singular, Plural, Context}, Translations}, MD) ->
+                        lists:foldl(
+                          fun(Translation, Form) ->
+                                  Key = ?PLURAL_MSG_KEY(Domain, Locale, Context,
+                                                        Singular, Plural, Form),
+                                  true = ets:insert(Tab, {Key, Translation}),
+                                  Form + 1
+                          end,
+                          0, Translations
+                         ),
+                        MD
+                end,
+                undefined, Catalog
+               ),
     case Headers of
         {ok, HeadersList} ->
             load_plural_rule(Tab, Domain, Locale, HeadersList),
@@ -174,7 +172,7 @@ load_plural_rule(Tab, Domain, Locale, Headers) ->
     end.
 
 unload_locale(Tab, Domain, Locale) ->
-    true = ets:match_delete(Tab, {?PLURAL_MSG_KEY(Domain, Locale, '_', '_', '_'), '_'}),
+    true = ets:match_delete(Tab, {?PLURAL_MSG_KEY(Domain, Locale, '_', '_', '_','_'), '_'}),
     true = ets:match_delete(Tab, {?HEADER_KEY(Domain, Locale, '_'), '_'}),
     true = ets:match_delete(Tab, {?PLURAL_RULE_KEY(Domain, Locale), '_'}),
     true = ets:match_delete(Tab, {?LOADED_KEY(Domain, Locale), '_'}),

@@ -103,7 +103,7 @@ to_erlang_ast({plural_rule, _, Expr}, Opts) ->
 %% Converts output of `gettexter_plural_parser' to `erl_parse' abstract form.
 %% You, most probably, shouldn't call this from your programs.
 %% Return value may be interpreted by `erl_eval:expr/2' (see `plural/2').
-%% May be printed as erlang code snippet by `erl_prettypr` (see `to_erlang_code/2`).
+%% May be printed as erlang code snippet by `erl_prettypr' (see `to_erlang_code/2').
 -spec to_erlang_abstract(plural_rule(), opts()) -> erl_parse:abstract_form().
 to_erlang_abstract({plural_rule, _, _}=Rule, Opts) ->
     erl_syntax:revert(to_erlang_ast(Rule, Opts)).
