@@ -166,21 +166,19 @@ dpgettext(Domain, Context, Text) ->
                 Text :: Type, Locale :: locale()) -> Type when Type :: text().
 %% binary case
 dpgettext(Domain, Context, Text, Locale)
-  when (Context == undefined andalso is_binary(Text)) orelse
-       is_binary(Context) ->
+  when (Context == undefined orelse is_binary(Context)) andalso is_binary(Text) ->
     case gettexter_server:dpgettext(Domain, Locale, Context, Text) of
         undefined   -> Text;
         Translation -> Translation
     end;
-%% string case - undefined context
-dpgettext(Domain, undefined, StrText, Locale) ->
-    Text = unicode:characters_to_binary(StrText),
-    Translation = dpgettext(Domain, undefined, Text, Locale),
-    unicode:binary_to_characters(Translation);
 %% string case
-dpgettext(Domain, StrContext, StrText, Locale) ->
-    ToString = fun unicode:characters_to_binary/1,
-    [Context, Text] = lists:map(ToString, [StrContext, StrText]),
+dpgettext(Domain, MaybeContext, StrText, Locale)
+ when (MaybeContext == undefined orelse is_list(MaybeContext)) andalso is_list(StrText) ->
+    Context = case MaybeContext of
+                  undefined  -> undefined;
+                  StrContext -> unicode:characters_to_binary(StrContext)
+              end,
+    Text = unicode:characters_to_binary(StrText),
     Translation = dpgettext(Domain, Context, Text, Locale),
     unicode:binary_to_characters(Translation).
 
@@ -199,14 +197,29 @@ dnpgettext(Domain, Context, Singular, Plural, N) ->
 -spec dnpgettext(Domain :: atom(), Context :: Type | undefined,
                  Singular :: Type, Plural :: Type, N :: integer(),
                  Locale :: locale()) -> Type when Type :: text().
-dnpgettext(Domain, Context, Singular, Plural, N, Locale) ->
+%% binary case
+dnpgettext(Domain, Context, Singular, Plural, N, Locale)
+  when (Context == undefined orelse is_binary(Context)) andalso
+        is_binary(Singular) andalso is_binary(Plural) ->
     Translation = gettexter_server:dnpgettext(Domain, Context, Singular, Plural,
                                               N, Locale),
     case Translation of
         undefined when N == 1 -> Singular;
         undefined             -> Plural;
         Translation           -> Translation
-    end.
+    end;
+%% string case
+dnpgettext(Domain, MaybeContext, StrSingular, StrPlural, N, Locale)
+  when (MaybeContext == undefined orelse is_list(MaybeContext)) andalso
+       is_list(StrSingular) andalso is_list(StrPlural) ->
+    Context = case MaybeContext of
+                  undefined  -> undefined;
+                  StrContext -> unicode:characters_to_binary(StrContext)
+              end,
+    Singular = unicode:characters_to_binary(StrSingular),
+    Plural = unicode:characters_to_binary(StrPlural),
+    Translation = dnpgettext(Domain, Context, Singular, Plural, N, Locale),
+    unicode:binary_to_characters(Translation).
 
 %%
 %% configuration
@@ -226,7 +239,7 @@ setlocale(Category=lc_messages, Locale) ->
     TextDomain = textdomain(),
 
     % assert
-    true = (TextDomain =/= undefined), 
+    true = (TextDomain =/= undefined),
 
     put({?MODULE, locale, TextDomain, Category}, Locale),
     {ok, _} = gettexter_server:ensure_loaded(TextDomain, Category, Locale),

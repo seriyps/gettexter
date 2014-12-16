@@ -28,7 +28,10 @@ gettext_loaded_test_() ->
 gettext_string_() ->
     [?_assertEqual("Hejsan", ?_("Hello", "se")),
      ?_assertEqual("NoTranslation", ?_("NoTranslation", "se")),
-     ?_assertEqual("", ?_("", "se"))].
+     ?_assertEqual("", ?_("", "se")),
+     ?_assertEqual("Fisk", ?N_("Fish", "Fishes", 1, "se")),
+     ?_assertError(function_clause, ?P_(<<"BinaryContext">>, "StringText", "se")),
+     ?_assertError(function_clause, ?NP_(<<"BinaryContext">>, "Singular", "Plural", "se"))].
 
 dpgettext_noloaded_() ->
      [?_assertEqual(<<"Hello">>, ?_(<<"Hello">>, <<"se">>)),
