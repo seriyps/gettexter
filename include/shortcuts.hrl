@@ -1,25 +1,60 @@
+%% For documentation see gettexter.hrl.
+
+%% ?NO_(Text) - noop
+
+%% Implicit locale
+
+%%% Implicit domain, no default
 -ifndef(GETTEXT_DOMAIN).
-  %% regular gettext call
-  -define(_(String), gettexter:gettext(String)).
 
-  %% ngettext - plural
-  -define(N_(Singular, Plural, N), gettexter:ngettext(Singular, Plural, N)).
+    -define(GETTEXT_DOMAIN, undefined).
 
-  %% pgettext (with msgctx)
-  -define(P_(Context, String), gettexter:pgettext(Context, String)).
-  -define(NP_(Context, Singular, Plural, N), gettexter:npgettext(Context, Singular, Plural, N)).
+    -define(_(Text), gettexter:gettext(Text)).
+
+    -define(N_(Singular, Plural, N), gettexter:ngettext(Singular, Plural, N)).
+
+    -define(P_(Context, Text), gettexter:pgettext(Context, Text)).
+
+    -define(NP_(Context, Singular, Plural, N),
+                gettexter:npgettext(Context, Singular, Plural, N)).
+%%% Implicit domain, default set
 -else.
-  -define(_(String), ?D_(?GETTEXT_DOMAIN, String)).
-  -define(N_(Singular, Plural, N), ?DN_(?GETTEXT_DOMAIN, Singular, Plural, N)).
-  -define(P_(Context, String), ?DP_(?GETTEXT_DOMAIN, Context, String)).
-  -define(NP_(Context, Singular, Plural, N), ?DNP_(?GETTEXT_DOMAIN, Context, Singular, Plural, N)).
+    -define(_(Text), ?D_(?GETTEXT_DOMAIN, Text)).
+    -define(N_(Singular, Plural, N),
+                ?DN_(?GETTEXT_DOMAIN, Singular, Plural, N)).
+    -define(P_(Context, Text), ?DP_(?GETTEXT_DOMAIN, Context, Text)).
+    -define(NP_(Context, Singular, Plural, N),
+                ?DNP_(?GETTEXT_DOMAIN, Context, Singular, Plural, N)).
 -endif.
 
-%% d*gettext - all the same, but with domain specified (should be used for library localization)
--define(D_(Domain, String), gettexter:dgettext(Domain, String)).
--define(DN_(Domain, Singular, Plural, N), gettexter:dngettext(Domain, Singular, Plural, N)).
--define(DP_(Domain, Context, String), gettexter:dpgettext(Domain, Context, String)).
--define(DNP_(Domain, Context, Singular, Plural, N), gettexter:dnpgettext(Domain, Context, Singular, Plural, N)).
+%%% Explicit domain
+-define(D_(Domain, Text), gettexter:dgettext(Domain, Text)).
+-define(DN_(Domain, Singular, Plural, N),
+            gettexter:dngettext(Domain, Singular, Plural, N)).
+-define(DP_(Domain, Context, Text),
+            gettexter:dpgettext(Domain, Context, Text)).
+-define(DNP_(Domain, Context, Singular, Plural, N),
+            gettexter:dnpgettext(Domain, Context, Singular, Plural, N)).
+
+%% Explicit locale
+
+%%% Implicit domain
+-define(_(Text, Locale), ?D_(?GETTEXT_DOMAIN, Text, Locale)).
+-define(N_(Singular, Plural, N, Locale),
+        ?DN_(?GETTEXT_DOMAIN, Singular, Plural, N, Locale)).
+-define(P_(Context, Text, Locale), ?DP_(?GETTEXT_DOMAIN, Context, Text, Locale)).
+-define(NP_(Context, Singular, Plural, N, Locale),
+        ?DNP_(?GETTEXT_DOMAIN, Context, Singular, Plural, N, Locale)).
+
+%%% Explicit domain
+-define(D_(Domain, Text, Locale),
+            gettexter:dgettext(Domain, Text, Locale)).
+-define(DN_(Domain, Singular, Plural, N, Locale),
+            gettexter:dngettext(Domain, Singular, Plural, N, Locale)).
+-define(DP_(Domain, Context, Text, Locale),
+            gettexter:dpgettext(Domain, Context, Text, Locale)).
+-define(DNP_(Domain, Context, Singular, Plural, N, Locale),
+            gettexter:dnpgettext(Domain, Context, Singular, Plural, N, Locale)).
 
 %% gettext noop
--define(NO_(String), String).
+-define(NO_(Text), Text).
