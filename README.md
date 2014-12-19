@@ -99,7 +99,7 @@ All lookup functions are able to take both binaries or strings. They will
 return what is given to them. Mixed textual types is not supported. 
 
 A locale may be loaded as an atom, binary or string. But after load they are
-not interchangable. Thus locale sv will be distinct from <<"sv">>.
+not interchangable. Thus locale `sv` will be distinct from `<<"sv">>`.
 
 For more information see the documentation.
 
@@ -242,19 +242,14 @@ generate .po and .mo files and then pass `translation_fun` and `locales` in comp
 Example `translation_fun`:
 
 ```erlang
-% setlocale calls may be skipped, if you call it once before template rendering
 TransFun = fun({Str, {StrPlural, N}}, {Locale, Ctx}) ->
-               gettexter:setlocale(lc_messages, Locale),
-               gettexter:pngettext(Ctx, Str, StrPlural, N);
+               gettexter:pngettext(Ctx, Str, StrPlural, N, Locale);
               ({Str, {StrPlural, N}}, Locale) ->
-               gettexter:setlocale(lc_messages, Locale),
-               gettexter:ngettext(Str, StrPlural, N);
+               gettexter:ngettext(Str, StrPlural, N, Locale);
               (Str, {Locale, Ctx}) ->
-               gettexter:setlocale(lc_messages, Locale),
-               gettexter:pgettext(Ctx, Str);
+               gettexter:pgettext(Ctx, Str, Locale);
               (Str, Locale) ->
-               gettexter:setlocale(lc_messages, Locale),
-               gettexter:gettext(Str)
+               gettexter:gettext(Str, Locale)
            end.
 ```
 
@@ -313,23 +308,14 @@ Apple
 TODO
 ----
 
-### Binary keys
+### Binary keys extraction
 
 Expression, `?_(<<"...">>)` is not well handled by `xgettext`, so, variants:
 
-* Provide smth like `-define(B_(Str), gettexter_bin:gettext(Str)).` (which
-  return binary translation for string key and add all of the `B*_` to `xgettext` keys.
+* Write own extractor like xgettext, but for erlang code. Also, `.pot` serializer
+  will be needed then.
 
-* Allow to define return value of `?*_` macroses in module-level by smth like
-  ```erlang
-  -define(GETTEXT_USE_BIN, true).
-  -include_lib("gettexter/include/shortcuts.hrl").
-  ```
-  and if `true`, in macroses replace `gettexter:*` calls to smth like `gettexter_bin:*`.
-
-* Don't use macroses for binary gettext lookups, but use direct `gettexter_bin:*`
-  calls. Pros: don't need to add all of them to `xgettext`, since function names
-  are the same for `gettexter:*` and `gettexter_bin:*`.
+* Send patches to GNU gettext.
 
 ### Custom locale loaders
 
@@ -342,10 +328,3 @@ Since ETS lookups require heap copying, smth like static .beam module with
 compiled-in phrases and plural rules (!!!) may  be generated.
 Pros: extra fast access speed; no memory copying; compiled plural rules.
 Cons: slow update; hackish.
-
-
-### Add lookup functions with force locale spec (no process dictionary).
-
-This may be especialy useful for asynchronous processes, when single process
-serve many clients somehow. Or when many processes participate in request
-handling. Plus, process dictionary is considered as bad practice.

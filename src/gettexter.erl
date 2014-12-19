@@ -32,7 +32,7 @@
 %% <ul>
 %%     <li>?D_(Domain, Text)</li>
 %%     <li>?DN_(Domain, Singular, Plural, N)</li>
-%%     <li>?DP_(Domain, Context)</li>
+%%     <li>?DP_(Domain, Context, Text)</li>
 %%     <li>?DNP_(Domain, Context, Singular, Plural, N)</li>
 %% </ul>
 %%
@@ -50,7 +50,7 @@
 %% <ul>
 %%     <li>?D_(Domain, Text, Locale)</li>
 %%     <li>?DN_(Domain, Singular, Plural, N, Locale)</li>
-%%     <li>?DP_(Domain, Context, Locale)</li>
+%%     <li>?DP_(Domain, Context, Text, Locale)</li>
 %%     <li>?DNP_(Domain, Context, Singular, Plural, N, Locale)</li>
 %% </ul>
 %% @end
