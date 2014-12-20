@@ -98,8 +98,10 @@ If you find some discrepancy (not explicitly documented) - please report.
 All lookup functions are able to take both binaries or strings. They will
 return what is given to them. Mixed textual types is not supported. 
 
-A locale may be loaded as an atom, binary or string. But after load they are
-not interchangable. Thus locale `sv` will be distinct from `<<"sv">>`.
+Each lookup function and macros has it's arity + 1 companion, which accept
+explicit locale as last argument. So, `gettexter:gettext(text())` has
+`gettexter:gettext(text(), locale())`, `?_(text())` has `?_(text(), locale())`
+and so on.
 
 For more information see the documentation.
 

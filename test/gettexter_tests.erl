@@ -1,35 +1,43 @@
 %% @doc Uses locale/se/LC_MESSAGES/default.po
--module(gettexter_test).
+-module(gettexter_tests).
 
+-define(GETTEXT_DOMAIN, default).
 -include("shortcuts.hrl").
 
 -include_lib("eunit/include/eunit.hrl").
+-export([start_load/0, start_load_string/0]).
 
+%% this 3 test functions shouldn't be runned concurrently, because they use
+%% single gettexter server.
 gettext_string_test_() ->
     {setup, fun start_load_string/0, fun stop/1,
-     [fun gettext_string_/0]}.
+     gettext_string_()}.
 
 gettext_noloaded_test_() ->
     {setup, fun start/0, fun stop/1,
-     [
-      fun dpgettext_noloaded_/0,
-      fun dnpgettext_noloaded_/0
-     ]
+     {inparallel, 1, [
+      dpgettext_noloaded_(),
+      dnpgettext_noloaded_()
+     ]}
     }.
 
 gettext_loaded_test_() ->
     {setup, fun start_load/0, fun stop/1,
      [
-      fun dpgettext_loaded_/0,
-      fun dnpgettext_loaded_/0
+      dpgettext_loaded_(),
+      dnpgettext_loaded_()
      ]
     }.
 
 gettext_string_() ->
-    [?_assertEqual("Hejsan", ?_("Hello", "se")),
+    [?_assertEqual("Hejsan", ?_("Hello", <<"se">>)),
+     ?_assertEqual("Hejsan", ?_("Hello", "se")),
+     ?_assertEqual("Hejsan", ?_("Hello", se)),
      ?_assertEqual("NoTranslation", ?_("NoTranslation", "se")),
      ?_assertEqual("", ?_("", "se")),
+     ?_assertEqual("Fisk", ?N_("Fish", "Fishes", 1, <<"se">>)),
      ?_assertEqual("Fisk", ?N_("Fish", "Fishes", 1, "se")),
+     ?_assertEqual("Fisk", ?N_("Fish", "Fishes", 1, se)),
      ?_assertError(function_clause, ?P_(<<"BinaryContext">>, "StringText", "se")),
      ?_assertError(function_clause, ?NP_(<<"BinaryContext">>, "Singular", "Plural", "se"))].
 
@@ -43,12 +51,16 @@ dpgettext_noloaded_() ->
 
 dpgettext_loaded_() ->
     [?_assertEqual(<<"Hejsan">>, ?_(<<"Hello">>, <<"se">>)),
+     ?_assertEqual(<<"Hejsan">>, ?_(<<"Hello">>, "se")),
+     ?_assertEqual(<<"Hejsan">>, ?_(<<"Hello">>, se)),
      ?_assertEqual(<<"NoTranslation">>, ?_(<<"NoTranslation">>, <<"se">>)),
      ?_assertEqual(<<"Tjena">>, ?P_(<<"Context">>, <<"Hello">>, <<"se">>)),
      ?_assertEqual(<<"NoTranslation">>, ?P_(<<"Context">>, <<"NoTranslation">>, <<"se">>))].
 
 dnpgettext_noloaded_() ->
     [?_assertEqual(<<"Fish">>, ?N_(<<"Fish">>, <<"Fishes">>, 1, <<"se">>)),
+     ?_assertEqual(<<"Fish">>, ?N_(<<"Fish">>, <<"Fishes">>, 1, "se")),
+     ?_assertEqual(<<"Fish">>, ?N_(<<"Fish">>, <<"Fishes">>, 1, se)),
      ?_assertEqual(<<"Fishes">>, ?N_(<<"Fish">>, <<"Fishes">>, 2, <<"se">>)),
      ?_assertEqual(<<>>, ?N_(<<>>, <<"Fishes">>, 1, <<"se">>)),
      ?_assertEqual(<<>>, ?N_(<<"Fish">>, <<>>, 2, <<"se">>)),
@@ -72,21 +84,44 @@ dnpgettext_loaded_() ->
 start() ->
     case gettexter_server:start_link() of
          {ok, Pid} -> Pid;
-         {error, {already_started, Pid}} -> Pid
+         {error, {already_started, Pid}} ->
+            io:format(user, "already ~p\n", [Pid]),
+            Pid
+    end.
+
+ensure_mo(Domain, Dir, Locale) ->
+    StrDomain = atom_to_list(Domain),
+    MoFile = filename:join([Dir, Locale, "LC_MESSAGES", StrDomain ++ ".mo"]),
+    case filelib:is_regular(MoFile) of
+        false ->
+            PoFile = filename:join([Dir, Locale, "LC_MESSAGES", StrDomain ++ ".po"]),
+            Cmd = ["msgfmt ", "--check ", "-o ", MoFile, " ", PoFile],
+            io:format("~s~n~s", [Cmd, os:cmd(Cmd)]);
+        _ -> ok
     end.
 
 start_load() ->
     Pid = start(),
-    gettexter:bindtextdomain(?GETTEXT_DOMAIN, "../test/locale"),
-    gettexter:ensure_loaded(?GETTEXT_DOMAIN, lc_messages, <<"se">>),
+    Dir = "../test/locale",
+    ensure_mo(?GETTEXT_DOMAIN, Dir, <<"se">>),
+    ok = gettexter:bindtextdomain(?GETTEXT_DOMAIN, Dir),
+    {ok, _} = gettexter:ensure_loaded(?GETTEXT_DOMAIN, lc_messages, <<"se">>),
     Pid.
 
 start_load_string() ->
     Pid = start(),
-    gettexter:bindtextdomain(?GETTEXT_DOMAIN, "../test/locale"),
-    gettexter:ensure_loaded(?GETTEXT_DOMAIN, lc_messages, "se"),
+    Dir = "../test/locale",
+    ensure_mo(?GETTEXT_DOMAIN, Dir, "se"),
+    ok = gettexter:bindtextdomain(?GETTEXT_DOMAIN, Dir),
+    {ok, _} = gettexter:ensure_loaded(?GETTEXT_DOMAIN, lc_messages, "se"),
     Pid.
 
 
 stop(Pid) ->
-    exit(Pid, normal).
+    Prev = process_flag(trap_exit, true),
+    exit(Pid, stop),
+    receive {'EXIT', Pid, stop} ->
+            process_flag(trap_exit, Prev)
+    after 5000 ->
+            error(timeout)
+    end.

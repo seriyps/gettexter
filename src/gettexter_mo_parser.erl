@@ -51,7 +51,7 @@
          trans_tab_offset :: integer()}).
 
 -spec parse_file(file:filename()) -> #st{}.
-parse_file(Name) when is_list(Name) ->
+parse_file(Name) ->
     {ok, Bin} = file:read_file(Name),
     parse(Bin).
 
