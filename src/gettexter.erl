@@ -1,6 +1,7 @@
 %%% @author Sergey Prokhorov <me@seriyps.ru>
-%%% @author Emil Falk <emil.falk@riseup.net>
+%%% @author Emil Falk <emil.falk@textalk.se>
 %% @copyright (C) 2014, Sergey Prokhorov
+%% @copyright (C) 2014, Emil Falk
 %% @doc
 %% == gettexter ==
 %%
@@ -31,7 +32,7 @@
 %% <ul>
 %%     <li>?D_(Domain, Text)</li>
 %%     <li>?DN_(Domain, Singular, Plural, N)</li>
-%%     <li>?DP_(Domain, Context)</li>
+%%     <li>?DP_(Domain, Context, Text)</li>
 %%     <li>?DNP_(Domain, Context, Singular, Plural, N)</li>
 %% </ul>
 %%
@@ -49,7 +50,7 @@
 %% <ul>
 %%     <li>?D_(Domain, Text, Locale)</li>
 %%     <li>?DN_(Domain, Singular, Plural, N, Locale)</li>
-%%     <li>?DP_(Domain, Context, Locale)</li>
+%%     <li>?DP_(Domain, Context, Text, Locale)</li>
 %%     <li>?DNP_(Domain, Context, Singular, Plural, N, Locale)</li>
 %% </ul>
 %% @end
@@ -165,23 +166,21 @@ dpgettext(Domain, Context, Text) ->
                 Text :: Type, Locale :: locale()) -> Type when Type :: text().
 %% binary case
 dpgettext(Domain, Context, Text, Locale)
-  when Context == undefined, is_binary(Text);
-       is_binary(Context) ->
-    case gettexter_server:dpgettext(Domain, Locale, Context, Text) of
+  when (Context == undefined orelse is_binary(Context)) andalso is_binary(Text) ->
+    case gettexter_server:dpgettext(Domain, Context, Text, to_binary(Locale)) of
         undefined   -> Text;
         Translation -> Translation
     end;
-%% string case - undefined context
-dpgettext(Domain, undefined, StrText, Locale) ->
-    Text = unicode:characters_to_binary(StrText),
-    Translation = dpgettext(Domain, undefined, Text, Locale),
-    unicode:binary_to_characters(Translation);
 %% string case
-dpgettext(Domain, StrContext, StrText, Locale) ->
-    ToString = fun unicode:characters_to_binary/1,
-    [Context, Text] = lists:map(ToString, [StrContext, StrText]),
+dpgettext(Domain, MaybeContext, StrText, Locale)
+ when (MaybeContext == undefined orelse is_list(MaybeContext)) andalso is_list(StrText) ->
+    Context = case MaybeContext of
+                  undefined  -> undefined;
+                  StrContext -> unicode:characters_to_binary(StrContext)
+              end,
+    Text = unicode:characters_to_binary(StrText),
     Translation = dpgettext(Domain, Context, Text, Locale),
-    unicode:binary_to_characters(Translation).
+    unicode:characters_to_list(Translation).
 
 %% @doc Translate a domain-specific plural text in a context.
 -spec dnpgettext(Domain :: atom(), Context :: Type | undefined,
@@ -198,14 +197,29 @@ dnpgettext(Domain, Context, Singular, Plural, N) ->
 -spec dnpgettext(Domain :: atom(), Context :: Type | undefined,
                  Singular :: Type, Plural :: Type, N :: integer(),
                  Locale :: locale()) -> Type when Type :: text().
-dnpgettext(Domain, Context, Singular, Plural, N, Locale) ->
+%% binary case
+dnpgettext(Domain, Context, Singular, Plural, N, Locale)
+  when (Context == undefined orelse is_binary(Context)) andalso
+        is_binary(Singular) andalso is_binary(Plural) ->
     Translation = gettexter_server:dnpgettext(Domain, Context, Singular, Plural,
-                                              N, Locale),
+                                              N, to_binary(Locale)),
     case Translation of
         undefined when N == 1 -> Singular;
         undefined             -> Plural;
         Translation           -> Translation
-    end.
+    end;
+%% string case
+dnpgettext(Domain, MaybeContext, StrSingular, StrPlural, N, Locale)
+  when (MaybeContext == undefined orelse is_list(MaybeContext)) andalso
+       is_list(StrSingular) andalso is_list(StrPlural) ->
+    Context = case MaybeContext of
+                  undefined  -> undefined;
+                  StrContext -> unicode:characters_to_binary(StrContext)
+              end,
+    Singular = unicode:characters_to_binary(StrSingular),
+    Plural = unicode:characters_to_binary(StrPlural),
+    Translation = dnpgettext(Domain, Context, Singular, Plural, N, Locale),
+    unicode:characters_to_list(Translation).
 
 %%
 %% configuration
@@ -225,7 +239,7 @@ setlocale(Category=lc_messages, Locale) ->
     TextDomain = textdomain(),
 
     % assert
-    true = (TextDomain =/= undefined), 
+    true = (TextDomain =/= undefined),
 
     put({?MODULE, locale, TextDomain, Category}, Locale),
     {ok, _} = gettexter_server:ensure_loaded(TextDomain, Category, Locale),
@@ -260,7 +274,7 @@ bind_textdomain_codeset(_Domain, _Charset) ->
 %% @doc Which domains are loaded for `Locale'.
 -spec which_domains(Locale :: locale()) -> [atom()].
 which_domains(Locale) ->
-    gettexter_server:which_domains(Locale).
+    gettexter_server:which_domains(to_binary(Locale)).
 
 %% @doc Which locales are loaded for `Domain'.
 -spec which_locales(Domain :: atom()) -> [locale()].
@@ -273,7 +287,7 @@ which_locales(Domain) ->
                     Locale :: locale()) ->
     {ok, file:filename() | already} |{error, any()}.
 ensure_loaded(Domain, Category, Locale) ->
-    gettexter_server:ensure_loaded(Domain, Category, Locale).
+    gettexter_server:ensure_loaded(Domain, Category, to_binary(Locale)).
 
 %% @doc Reset the process dictionary
 %% Remove all gettext stuff from process dictionary (but not from locale data
@@ -285,3 +299,11 @@ reset() ->
                   end,
                   get()),
     ok.
+
+
+to_binary(Bin) when is_binary(Bin) ->
+    Bin;
+to_binary(List) when is_list(List) ->
+    unicode:characters_to_binary(List);
+to_binary(Atom) when is_atom(Atom) ->
+    atom_to_binary(Atom, unicode).

@@ -7,8 +7,8 @@
 
 main(Name, What, N) ->
     gettexter:bindtextdomain(?GETTEXT_DOMAIN, "priv/locales"),
-    gettexter:setlocale(undefined, "ru"),
     gettexter:textdomain(?GETTEXT_DOMAIN),
+    gettexter:setlocale(lc_messages, "ru"),
 
     Question = case What of
                  sleep -> ?NO_("Wanna sleep?");

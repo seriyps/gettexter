@@ -1,7 +1,7 @@
 %%% @author Sergey Prokhorov <me@seriyps.ru>
 %%% @copyright (C) 2014, Sergey Prokhorov
 %%% @doc
-%%% Locale information storage.
+%%% Locale information storage. Operates only binary data (except `domain').
 %%% @end
 %%% Created : 25 Feb 2014 by Sergey Prokhorov <me@seriyps.ru>
 
@@ -11,7 +11,7 @@
 -export([start_link/0]).
 -export([dpgettext/4, dnpgettext/6]).
 -export([bindtextdomain/2]).
--export([ensure_loaded/3, which_domains/1, which_locales/1, which_loaded/0,header/3]).
+-export([ensure_loaded/3, which_domains/1, which_locales/1, which_loaded/0, which_keys/2, header/3]).
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
@@ -22,7 +22,7 @@
 
 %% ETS key types
 -define(MSG_KEY(Domain, Locale, Context, Text),
-        ?PLURAL_MSG_KEY(Domain, Locale, Context, Text, undefined, -1)).
+        ?PLURAL_MSG_KEY(Domain, Locale, Context, Text, undefined, 0)).
 -define(PLURAL_MSG_KEY(Domain, Locale, Context, Singular, Plural, Form),
         {msg, Domain, Locale, Context, Singular, Plural, Form}).
 -define(PLURAL_RULE_KEY(Domain, Locale), {plural_rule, Domain, Locale}).
@@ -37,13 +37,15 @@
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
-dpgettext(Domain, Context, Locale, Text) ->
+-spec dpgettext(atom(), binary(), binary(), binary()) -> binary().
+dpgettext(Domain, Context, Text, Locale) ->
     case ets:lookup(?TAB, ?MSG_KEY(Domain, Locale, Context, Text)) of
         []                 -> undefined;
         [{_, Translation}] -> Translation
     end.
 
-dnpgettext(Domain, Context, Locale, Singular, Plural, N) ->
+-spec dnpgettext(atom(), binary(), binary(), binary(), binary(), integer()) -> binary().
+dnpgettext(Domain, Context, Singular, Plural, N, Locale) ->
     case ets:lookup(?TAB, ?PLURAL_RULE_KEY(Domain, Locale)) of
         []                  -> undefined;
         [{_, CompiledRule}] ->
@@ -56,25 +58,48 @@ dnpgettext(Domain, Context, Locale, Singular, Plural, N) ->
             end
     end.
 
+-spec bindtextdomain(atom(), file:filename()) -> ok.
 bindtextdomain(Domain, LocaleDir) ->
     gen_server:call(?SERVER, {bindtextdomain, Domain, LocaleDir}).
 
-
+-spec ensure_loaded(atom(), atom(), binary()) ->
+                           {ok, already | file:filename()}
+                               | {error, any()}.
 ensure_loaded(TextDomain, _Category, Locale) ->
     case ets:member(?TAB, ?LOADED_KEY(TextDomain, Locale)) of
         true  -> {ok, already};
         false -> gen_server:call(?SERVER, {ensure_loaded, TextDomain, Locale})
     end.
 
+-spec which_domains(binary()) -> [atom()].
 which_domains(Locale) ->
     [Domain || [Domain] <- ets:match(?TAB, {?LOADED_KEY('$1', Locale), '_'})].
 
+-spec which_locales(atom()) -> [binary()].
 which_locales(Domain) ->
     [Locale || [Locale] <- ets:match(?TAB, {?LOADED_KEY(Domain, '$1'), '_'})].
 
+-spec which_loaded() -> [{Domain, Locale, MoPath}]
+                            when
+      Domain :: atom(),
+      Locale :: binary(),
+      MoPath :: file:filename().
 which_loaded() ->
     [list_to_tuple(L) || L <- ets:match(?TAB, {?LOADED_KEY('$1', '$2'), '$3'})].
 
+-spec which_keys(atom(), binary()) -> [{Singular, Plural, Context}]
+                                          when
+      Context :: undefined | binary(),
+      Singular :: binary(),
+      Plural :: binary().
+which_keys(Domain, Locale) ->
+    lists:usort(
+      [list_to_tuple(L)
+       || L <- ets:match(
+                 ?TAB,
+                 {?PLURAL_MSG_KEY(Domain, Locale, '$3', '$1', '$2', '_'), '_'})]).
+
+-spec header(atom(), binary(), binary()) -> undefined | binary().
 header(Domain, Locale, Name) ->
     case ets:lookup(?TAB, ?HEADER_KEY(Domain, Locale, Name)) of
         []           -> undefined;
@@ -114,14 +139,18 @@ handle_info(_Info, State) ->
 terminate(_Reason, _State) ->
     ok.
 code_change(_OldVsn, State, _Extra) ->
-    {ok, State}.
+            {ok, State}.
 
 %% Internal
 
 load_locale(Tab, Domain, Locale) ->
     Binding = case ets:lookup(Tab, ?BINDING_KEY(Domain)) of
-                  []          -> "locale";
-                  [{_, Path}] -> Path
+                  [] ->
+                      rel_to_abs_path(Domain, "locale");
+                  [{_, AbsPath = "/" ++ _}] ->
+                      AbsPath;
+                  [{_, RelPath}] ->
+                      rel_to_abs_path(Domain, RelPath)
               end,
     AbsBinding = filename:absname(Binding),
     MoFileName = filename:join([AbsBinding, Locale, "LC_MESSAGES", atom_to_list(Domain) ++ ".mo"]),
@@ -160,6 +189,43 @@ load_locale(Tab, Domain, Locale) ->
     true = ets:insert(Tab, {?LOADED_KEY(Domain, Locale), MoFileName}),
     {ok, MoFileName}.
 
+%% The idea is that usualy Domain is named as your OTP application, so, if you
+%% have 2 apps: one is your main app and the second one is dependency, FS layout
+%% will be
+%%
+%% my_main
+%%     src
+%%         my_main_app.erl
+%%     locale
+%%         en
+%%         ru
+%%     deps
+%%         my_dep
+%%             src
+%%                 my_dep_app.erl
+%%             locale
+%%                 en
+%%                 ru
+%% And my_dep_app.erl will have lines like gettexter:textdomain(my_dep), while
+%% my_main_app.erl will use `gettexter:textdomain(my_main)'.
+%%
+%% So, with this filename:join(code:lib_dir(Domain), "locale") each app will
+%% load locales from it's own locale directory - both apps may use single
+%% gettexter server without any conflicts.
+rel_to_abs_path(Domain, RelPath) ->
+    BaseDir = case code:lib_dir(Domain) of
+                  {error, bad_name} ->
+                      %% domain isn't the name of loaded application. Try to
+                      %% load locale from current dir
+                      {ok, Cwd} = file:get_cwd(),
+                      Cwd;
+                  LibDir ->
+                      %% domain is the name of some application. So, we use
+                      %% application's root directory as ase dir
+                      LibDir
+              end,
+    filename:join(BaseDir, RelPath).
+
 load_plural_rule(Tab, Domain, Locale, Headers) ->
     case proplists:get_value(<<"plural-forms">>, Headers) of
         undefined ->
@@ -172,7 +238,7 @@ load_plural_rule(Tab, Domain, Locale, Headers) ->
     end.
 
 unload_locale(Tab, Domain, Locale) ->
-    true = ets:match_delete(Tab, {?PLURAL_MSG_KEY(Domain, Locale, '_', '_', '_','_'), '_'}),
+    true = ets:match_delete(Tab, {?PLURAL_MSG_KEY(Domain, Locale, '_', '_', '_', '_'), '_'}),
     true = ets:match_delete(Tab, {?HEADER_KEY(Domain, Locale, '_'), '_'}),
     true = ets:match_delete(Tab, {?PLURAL_RULE_KEY(Domain, Locale), '_'}),
     true = ets:match_delete(Tab, {?LOADED_KEY(Domain, Locale), '_'}),

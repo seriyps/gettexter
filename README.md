@@ -52,7 +52,8 @@ main(Name, What, N) ->
     io:format(?_("Hello, ~p! ~ts. ~ts"), [Name, Time, ?_(Question)]).
 ```
 
-Extract messages from sources to .pot file by `xgettext` command
+Extract messages from sources to .pot file by `xgettext` command. Take note
+that this only work for string literals and not binaries.
 
 ```bash
 export APP=my_app
@@ -94,27 +95,36 @@ Api tries to be compatible with [GNU gettext API](http://www.gnu.org/software/ge
 If you find some discrepancy (not explicitly documented) - please report.
 
 ### Gettext lookups
+All lookup functions are able to take both binaries or strings. They will
+return what is given to them. Mixed textual types is not supported. 
+
+Each lookup function and macros has it's arity + 1 companion, which accept
+explicit locale as last argument. So, `gettexter:gettext(text())` has
+`gettexter:gettext(text(), locale())`, `?_(text())` has `?_(text(), locale())`
+and so on.
+
+For more information see the documentation.
 
 ```erlang
-gettexter:gettext(string()) -> string().  % '?_' macro
+gettexter:gettext(text()) -> text().  % '?_' macro
 ```
 Main gettext call. Uses locale, activated by `setlocale/2`.
 
 ```erlang
-gettexter:ngettext(Singular :: string(), Plural :: string(),
-                   Count :: integer()) -> string().  % '?N_' macro
+gettexter:ngettext(Singular :: text(), Plural :: text(),
+                   Count :: integer()) -> text().  % '?N_' macro
 ```
 Plural gettext call.
 
 ```erlang
-gettexter:pgettext(Context :: string(), string()) -> string().  % '?P_'
-gettexter:pngettext(Context :: string(), string(), string(),
-                    integer()) -> string().  % '?PN_'
+gettexter:pgettext(Context :: text(), text()) -> text().  % '?P_'
+gettexter:pngettext(Context :: text(), text(), text(),
+                    integer()) -> text().  % '?PN_'
 ```
 Gettext calls with respect to `msgctx` ('p' means 'particular').
 
 ```erlang
-gettexter:dgettext(Domain :: atom(), string()) -> string().  % '?D_'
+gettexter:dgettext(Domain :: atom(), text()) -> text().  % '?D_'
 % and other 'gettexter:d{n,p,pn}gettext' plus '?D*_' macroses
 ```
 Gettext calls, which will search in a specific domain (namespace).
@@ -140,8 +150,8 @@ before `setlocale` or `ensure_loaded` calls.
 This function usualy called only once at application initialization/configuration phase.
 
 ```erlang
-gettexter:setlocale(lc_messages, Locale :: string()) -> ok.
-gettexter:getlocale(lc_messages) -> string() | undefined.
+gettexter:setlocale(lc_messages, Locale :: text()) -> ok.
+gettexter:getlocale(lc_messages) -> text() | undefined.
 ```
 Get / Set default locale for **current process**. It also loads .mo files for
 `Locale` from the `LocaleDir`s for each `Domain` (if not loaded yet).
@@ -189,7 +199,7 @@ gettexter:which_domains(Locale) -> [atom()].
 Which domains are loaded from .mo files to gettext server for `Locale`.
 
 ```erlang
-gettexter:which_locales(Domain) -> [string()].
+gettexter:which_locales(Domain) -> [locale()].
 ```
 Which locales are loaded from .mo files to gettext server for `Domain`.
 
@@ -234,19 +244,14 @@ generate .po and .mo files and then pass `translation_fun` and `locales` in comp
 Example `translation_fun`:
 
 ```erlang
-% setlocale calls may be skipped, if you call it once before template rendering
 TransFun = fun({Str, {StrPlural, N}}, {Locale, Ctx}) ->
-               gettexter:setlocale(lc_messages, Locale),
-               gettexter:pngettext(Ctx, Str, StrPlural, N);
+               gettexter:pngettext(Ctx, Str, StrPlural, N, Locale);
               ({Str, {StrPlural, N}}, Locale) ->
-               gettexter:setlocale(lc_messages, Locale),
-               gettexter:ngettext(Str, StrPlural, N);
+               gettexter:ngettext(Str, StrPlural, N, Locale);
               (Str, {Locale, Ctx}) ->
-               gettexter:setlocale(lc_messages, Locale),
-               gettexter:pgettext(Ctx, Str);
+               gettexter:pgettext(Ctx, Str, Locale);
               (Str, Locale) ->
-               gettexter:setlocale(lc_messages, Locale),
-               gettexter:gettext(Str)
+               gettexter:gettext(Str, Locale)
            end.
 ```
 
@@ -305,23 +310,14 @@ Apple
 TODO
 ----
 
-### Binary keys
+### Binary keys extraction
 
 Expression, `?_(<<"...">>)` is not well handled by `xgettext`, so, variants:
 
-* Provide smth like `-define(B_(Str), gettexter_bin:gettext(Str)).` (which
-  return binary translation for string key and add all of the `B*_` to `xgettext` keys.
+* Write own extractor like xgettext, but for erlang code. Also, `.pot` serializer
+  will be needed then.
 
-* Allow to define return value of `?*_` macroses in module-level by smth like
-  ```erlang
-  -define(GETTEXT_USE_BIN, true).
-  -include_lib("gettexter/include/shortcuts.hrl").
-  ```
-  and if `true`, in macroses replace `gettexter:*` calls to smth like `gettexter_bin:*`.
-
-* Don't use macroses for binary gettext lookups, but use direct `gettexter_bin:*`
-  calls. Pros: don't need to add all of them to `xgettext`, since function names
-  are the same for `gettexter:*` and `gettexter_bin:*`.
+* Send patches to GNU gettext.
 
 ### Custom locale loaders
 
@@ -334,10 +330,3 @@ Since ETS lookups require heap copying, smth like static .beam module with
 compiled-in phrases and plural rules (!!!) may  be generated.
 Pros: extra fast access speed; no memory copying; compiled plural rules.
 Cons: slow update; hackish.
-
-
-### Add lookup functions with force locale spec (no process dictionary).
-
-This may be especialy useful for asynchronous processes, when single process
-serve many clients somehow. Or when many processes participate in request
-handling. Plus, process dictionary is considered as bad practice.
