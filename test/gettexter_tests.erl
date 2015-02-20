@@ -81,6 +81,25 @@ dnpgettext_loaded_() ->
      ?_assertEqual(<<"NoTranslation">>, ?NP_(<<"Context">>, <<"NoTranslation">>, <<"NoTranslations">>, 1, <<"se">>)),
      ?_assertEqual(<<"NoTranslations">>, ?NP_(<<"Context">>, <<"NoTranslation">>, <<"NoTranslations">>, 2, <<"se">>))].
 
+bindtextdomain_regression_test_() ->
+    {setup, fun start_load/0, fun stop/1,
+     [
+      fun() ->
+              gettexter:textdomain(?GETTEXT_DOMAIN),
+              ?assertEqual(<<"Hejsan">>, gettexter:gettext(<<"Hello">>, <<"se">>))
+      end,
+      fun() ->
+              gettexter:textdomain(?GETTEXT_DOMAIN),
+              ?assertEqual("Hejsan", gettexter:gettext("Hello", <<"se">>))
+      end,
+      fun() ->
+              gettexter:textdomain(?GETTEXT_DOMAIN),
+              ?assertEqual(<<"Fisk">>, gettexter:ngettext(<<"Fish">>, <<"Fishes">>, 1, <<"se">>))
+      end
+     ]
+    }.
+
+
 start() ->
     case gettexter_server:start_link() of
          {ok, Pid} -> Pid;

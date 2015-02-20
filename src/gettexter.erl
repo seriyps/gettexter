@@ -156,10 +156,7 @@ dngettext(Domain, Singular, Plural, N, Locale) ->
                 Text :: Type) -> Type when Type :: text().
 dpgettext(Domain, Context, Text) ->
     Locale = getlocale(lc_messages),
-    Domain1 = if Domain == undefined -> textdomain();
-                 true -> Domain
-              end,
-    dpgettext(Domain1, Context, Text, Locale).
+    dpgettext(Domain, Context, Text, Locale).
 
 %% @doc Translate a domain-specific text in a context given a locale.
 -spec dpgettext(Domain :: atom(), Context :: Type | undefined,
@@ -167,7 +164,10 @@ dpgettext(Domain, Context, Text) ->
 %% binary case
 dpgettext(Domain, Context, Text, Locale)
   when (Context == undefined orelse is_binary(Context)) andalso is_binary(Text) ->
-    case gettexter_server:dpgettext(Domain, Context, Text, to_binary(Locale)) of
+    Domain1 = if Domain == undefined -> textdomain();
+                 true -> Domain
+              end,
+    case gettexter_server:dpgettext(Domain1, Context, Text, to_binary(Locale)) of
         undefined   -> Text;
         Translation -> Translation
     end;
@@ -188,10 +188,7 @@ dpgettext(Domain, MaybeContext, StrText, Locale)
     Type when Type :: text().
 dnpgettext(Domain, Context, Singular, Plural, N) ->
     Locale = getlocale(lc_messages),
-    Domain1 = if Domain == undefined -> textdomain();
-                 true -> Domain
-              end,
-    dnpgettext(Domain1, Context, Singular, Plural, N, Locale).
+    dnpgettext(Domain, Context, Singular, Plural, N, Locale).
 
 %% @doc Translate a domain-specific plural text in a context given a locale.
 -spec dnpgettext(Domain :: atom(), Context :: Type | undefined,
@@ -201,7 +198,10 @@ dnpgettext(Domain, Context, Singular, Plural, N) ->
 dnpgettext(Domain, Context, Singular, Plural, N, Locale)
   when (Context == undefined orelse is_binary(Context)) andalso
         is_binary(Singular) andalso is_binary(Plural) ->
-    Translation = gettexter_server:dnpgettext(Domain, Context, Singular, Plural,
+    Domain1 = if Domain == undefined -> textdomain();
+                 true -> Domain
+              end,
+    Translation = gettexter_server:dnpgettext(Domain1, Context, Singular, Plural,
                                               N, to_binary(Locale)),
     case Translation of
         undefined when N == 1 -> Singular;
