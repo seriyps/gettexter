@@ -1,12 +1,16 @@
 {application, gettexter,
  [
   {description, "GNU gettext compatible translation library"},
-  {vsn, "v0.0.1"},
+  {vsn, "0.0.5"},
   {registered, []},
   {applications, [
                   kernel,
                   stdlib
                  ]},
   {mod, { gettexter_app, []}},
-  {env, []}
+  {env, []},
+
+  {maintainers, ["Sergey Prokhorov"]},
+  {licenses, ["Apache 2.0"]},
+  {links, [{"Github", "https://github.com/seriyps/gettexter"}]}
  ]}.
