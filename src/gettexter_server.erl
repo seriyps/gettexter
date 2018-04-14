@@ -125,9 +125,10 @@ handle_call({ensure_loaded, Domain, Locale}, _From, State) ->
                     try
                         load_locale(?TAB, Domain, Locale)
                     catch Type:Reason ->
-                              % cleanup possible partial load
-                              catch unload_locale(?TAB, Domain, Locale),
-                              {error, {Type, Reason, erlang:get_stacktrace()}}
+                            %% cleanup possible partial load
+                            Trace = erlang:get_stacktrace(),
+                            catch unload_locale(?TAB, Domain, Locale),
+                            {error, {Type, Reason, Trace}}
                     end
             end,
     {reply, Reply, State}.
@@ -196,33 +197,40 @@ load_locale(Tab, Domain, Locale) ->
 %% my_main
 %%     src
 %%         my_main_app.erl
-%%     locale
-%%         en
-%%         ru
+%%     priv
+%%         locale
+%%             en
+%%               LC_MESSAGES
+%%                 my_main.mo
+%%             ru
+%%               ...
 %%     deps
 %%         my_dep
 %%             src
 %%                 my_dep_app.erl
-%%             locale
-%%                 en
-%%                 ru
+%%             priv
+%%                 locale
+%%                     en
+%%                         LC_MESSAGES
+%%                             my_dep.mo
+%%                     ru
 %% And my_dep_app.erl will have lines like gettexter:textdomain(my_dep), while
 %% my_main_app.erl will use `gettexter:textdomain(my_main)'.
 %%
-%% So, with this filename:join(code:lib_dir(Domain), "locale") each app will
+%% So, with this filename:join(code:priv_dir(Domain), "locale") each app will
 %% load locales from it's own locale directory - both apps may use single
 %% gettexter server without any conflicts.
 rel_to_abs_path(Domain, RelPath) ->
-    BaseDir = case code:lib_dir(Domain) of
+    BaseDir = case code:priv_dir(Domain) of
                   {error, bad_name} ->
                       %% domain isn't the name of loaded application. Try to
                       %% load locale from current dir
                       {ok, Cwd} = file:get_cwd(),
                       Cwd;
-                  LibDir ->
+                  PrivDir ->
                       %% domain is the name of some application. So, we use
-                      %% application's root directory as ase dir
-                      LibDir
+                      %% application's priv directory as base dir
+                      PrivDir
               end,
     filename:join(BaseDir, RelPath).
 

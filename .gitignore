@@ -7,3 +7,5 @@ ebin/
 erl_crash.dump
 src/gettexter_plural_parser.erl
 src/gettexter_plural_scanner.erl
+_build/
+rebar.lock

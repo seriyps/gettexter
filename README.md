@@ -140,9 +140,9 @@ Setup directory from which .mo files will be loaded like
 Domain **MUST** be specified for library applications (see `dgettext`).
 
 By default, `Domain` is `application:get_application()` and `LocaleDir` is
-`filename:absname(filename:join(code:lib_dir(Domain), "locale"))`.
+`filename:absname(filename:join(code:priv_dir(Domain), "locale"))`.
 If `LocaleDir` is relative, absolute path will be calculated, unlike original
-`gettext` does (relative to cwd), but relative to `code:lib_dir(Domain)`.
+`gettext` does (relative to cwd), but relative to `code:priv_dir(Domain)`.
 
 This function don't reload already loaded locales for `Domain`, so, should be called
 before `setlocale` or `ensure_loaded` calls.
@@ -288,8 +288,8 @@ Code:
 ```erlang
 1> application:start(gettexter).
 2> Domain = test_app.
-3> % next step may be skipped, if `code:lib_dir(Domain)` is ok (if Domain is appname)
-3> gettexter:bindtextdomain(Domain, </path/to/app/root> ++ "/locale").
+3> % next step may be skipped, if `code:priv_dir(Domain)` is ok (if Domain is appname)
+3> gettexter:bindtextdomain(Domain, </path/to/app/priv> ++ "/locale").
 4> gettexter:textdomain(Domain).
 5> erlydtl:compile_file("src/tpl.dtl", t).
 6> TransFun = '....'. % see above
