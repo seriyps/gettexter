@@ -22,10 +22,10 @@
 %%% msgstr[2] "Камней"
 %%% </pre>
 %%% it will produce
-%%% <pre><code>
+%%% ```
 %%% [{ {<<"Download">>, undefined, <<"some-ctx">>}, [<<"Скачать">>] },
 %%%  { {<<"Stone">>, <<"Stones">>, undefined}, [<<"Камень">>, <<"Камня">>, <<"Камней">>] }]
-%%% </code></pre>
+%%% '''
 %%% @end
 %%% Created :  3 Sep 2013 by Sergey Prokhorov <me@seriyps.ru>
 

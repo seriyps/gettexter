@@ -1,7 +1,6 @@
 %%% @author Sergey Prokhorov <me@seriyps.ru>
 %%% @author Emil Falk <emil.falk@textalk.se>
-%% @copyright (C) 2014, Sergey Prokhorov
-%% @copyright (C) 2014, Emil Falk
+%% @copyright (C) 2014, Sergey Prokhorov; 2014, Emil Falk
 %% @doc
 %% == gettexter ==
 %%
