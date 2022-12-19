@@ -39,7 +39,7 @@ Mark your translatable strings with:
 -include_lib("gettexter/include/shortcuts.hrl").
 
 main(Name, What, N) ->
-    gettexter:bindtextdomain(?GETTEXT_DOMAIN, "/../locales"), % from where load locales
+    gettexter:bindtextdomain(?GETTEXT_DOMAIN, "/../priv/locales"), % from where load locales
     gettexter:textdomain(?GETTEXT_DOMAIN), % domain for current process
     gettexter:setlocale(lc_messages, "en"),  % locale for current process
 
@@ -58,7 +58,7 @@ that this only work for string literals and not binaries.
 ```bash
 export APP=my_app
 
-xgettext -o locale/${APP}.pot --package-name=${APP} -d ${APP} --sort-by-file -L C \
+xgettext -o priv/locale/${APP}.pot --package-name=${APP} -d ${APP} --sort-by-file -L C \
     --keyword='NO_' --keyword='_' --keyword='N_:1,2' \
     --keyword='P_:1c,2' --keyword='NP_:1c,2,3' \
     --keyword='D_:2' --keyword='DN_:2,3' --keyword='DP_:2c,3' --keyword='DNP_:2c,3,4' \
@@ -69,20 +69,20 @@ xgettext -o locale/${APP}.pot --package-name=${APP} -d ${APP} --sort-by-file -L 
 Initialize new locale's .po file by `msginit`
 
 ```bash
-mkdir -p locale/ru/LC_MESSAGES/
-msginit -i locale/${APP}.pot -o locale/ru/LC_MESSAGES/${APP}.po --locale=ru
+mkdir -p priv/locale/ru/LC_MESSAGES/
+msginit -i priv/locale/${APP}.pot -o priv/locale/ru/LC_MESSAGES/${APP}.po --locale=ru
 ```
 
 Or actualize existing locale's .po file by `msgmerge`
 
 ```bash
-msgmerge -U locale/ru/LC_MESSAGES/${APP}.po locale/${APP}.pot
+msgmerge -U priv/locale/ru/LC_MESSAGES/${APP}.po priv/locale/${APP}.pot
 ```
 
 When translations are finished, generate locale's binary .mo files by `msgfmt`
 
 ```bash
-msgfmt --check -o locale/ru/LC_MESSAGES/${APP}.mo locale/ru/LC_MESSAGES/${APP}.po
+msgfmt --check -o priv/locale/ru/LC_MESSAGES/${APP}.mo priv/locale/ru/LC_MESSAGES/${APP}.po
 ```
 It's **strongly recommended** to not add .mo files to your repository! So, add
 `*.mo` to .gitignore / .hgignore and generate them in compile-time (by rebar
@@ -264,7 +264,7 @@ Template:
 ```
 .po file
 ```po
-#file: locale/ru/LC_MESSAGES/test_app.po + compiled .mo
+#file: priv/locale/ru/LC_MESSAGES/test_app.po + compiled .mo
 msgid ""
 msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"

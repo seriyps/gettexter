@@ -124,9 +124,8 @@ handle_call({ensure_loaded, Domain, Locale}, _From, State) ->
                 false ->
                     try
                         load_locale(?TAB, Domain, Locale)
-                    catch Type:Reason ->
+                    catch Type:Reason:Trace ->
                             %% cleanup possible partial load
-                            Trace = erlang:get_stacktrace(),
                             catch unload_locale(?TAB, Domain, Locale),
                             {error, {Type, Reason, Trace}}
                     end
