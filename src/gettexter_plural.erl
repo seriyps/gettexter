@@ -37,7 +37,7 @@
 -type opts() :: [{runtime_mod, atom()}  %module used for runtime calls 'to_boolean/1' and 'to_integer/1'
                 ].
 -record(plural_rule_compiled, {nplurals :: non_neg_integer(), %result, returned by compile/2
-                               abstract_form :: erl_parse:abstract_form()}).
+                               abstract_form :: erl_parse:abstract_expr()}).
 
 -record(opts, {runtime_mod = ?MODULE}).
 -define(ES, erl_syntax).
@@ -104,7 +104,7 @@ to_erlang_ast({plural_rule, _, Expr}, Opts) ->
 %% You, most probably, shouldn't call this from your programs.
 %% Return value may be interpreted by `erl_eval:expr/2' (see `plural/2').
 %% May be printed as erlang code snippet by `erl_prettypr' (see `to_erlang_code/2').
--spec to_erlang_abstract(plural_rule(), opts()) -> erl_parse:abstract_form().
+-spec to_erlang_abstract(plural_rule(), opts()) -> erl_parse:abstract_expr().
 to_erlang_abstract({plural_rule, _, _}=Rule, Opts) ->
     erl_syntax:revert(to_erlang_ast(Rule, Opts)).
 

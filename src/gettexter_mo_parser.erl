@@ -44,11 +44,11 @@
         {bin :: binary(),
          obin :: binary(),
          catalog=[] :: catalog(),
-         bo :: little | big,
-         version :: integer(),
-         msg_cnt :: integer(),
-         orig_tab_offset :: integer(),
-         trans_tab_offset :: integer()}).
+         bo :: little | big | undefined,
+         version :: integer() | undefined,
+         msg_cnt :: integer() | undefined,
+         orig_tab_offset :: integer() | undefined,
+         trans_tab_offset :: integer() | undefined}).
 
 -spec parse_file(file:filename()) -> #st{}.
 parse_file(Name) ->

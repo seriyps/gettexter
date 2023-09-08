@@ -114,14 +114,15 @@ ensure_mo(Domain, Dir, Locale) ->
     case filelib:is_regular(MoFile) of
         false ->
             PoFile = filename:join([Dir, Locale, "LC_MESSAGES", StrDomain ++ ".po"]),
-            Cmd = ["msgfmt ", "--check ", "-o ", MoFile, " ", PoFile],
-            io:format("~s~n~s", [Cmd, os:cmd(Cmd)]);
+            Cmd = unicode:characters_to_list(["msgfmt ", "--check ", "-o ", MoFile, " ", PoFile]),
+            {ok, Cwd} = file:get_cwd(),
+            io:format(user, "At ~s~n~s~n~s", [Cwd, Cmd, os:cmd(Cmd)]);
         _ -> ok
     end.
 
 start_load() ->
     Pid = start(),
-    Dir = "../test/locale",
+    Dir = "test/locale",
     ensure_mo(?GETTEXT_DOMAIN, Dir, <<"se">>),
     ok = gettexter:bindtextdomain(?GETTEXT_DOMAIN, Dir),
     {ok, _} = gettexter:ensure_loaded(?GETTEXT_DOMAIN, lc_messages, <<"se">>),
@@ -129,7 +130,7 @@ start_load() ->
 
 start_load_string() ->
     Pid = start(),
-    Dir = "../test/locale",
+    Dir = "test/locale",
     ensure_mo(?GETTEXT_DOMAIN, Dir, "se"),
     ok = gettexter:bindtextdomain(?GETTEXT_DOMAIN, Dir),
     {ok, _} = gettexter:ensure_loaded(?GETTEXT_DOMAIN, lc_messages, "se"),

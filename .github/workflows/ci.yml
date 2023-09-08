@@ -1,0 +1,47 @@
+name: CI
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+jobs:
+  ci:
+    name: Run checks and tests over ${{matrix.otp}} and ${{matrix.os}}
+    runs-on: ${{matrix.os}}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        otp: ["26.0", "25.3", "24.3"]
+        os: ["ubuntu-22.04"]
+        include:
+          - otp: "23.3"
+            os: "ubuntu-20.04"
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{matrix.otp}}
+          rebar3-version: "3.17.0"
+
+      - name: Install gettext
+        run: sudo apt-get install -y gettext
+
+      - name: Compile
+        run: rebar3 compile
+
+      - name: xref
+        run: rebar3 xref
+
+      - name: Eunit test
+        run: rebar3 eunit
+
+      - name: Generate docs
+        run: rebar3 edoc
+
+      - name: Dialyze
+        run: rebar3 dialyzer

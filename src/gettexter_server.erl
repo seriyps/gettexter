@@ -37,14 +37,14 @@
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
--spec dpgettext(atom(), binary(), binary(), binary()) -> binary().
+-spec dpgettext(atom(), binary() | undefined, binary(), binary()) -> binary() | undefined.
 dpgettext(Domain, Context, Text, Locale) ->
     case ets:lookup(?TAB, ?MSG_KEY(Domain, Locale, Context, Text)) of
         []                 -> undefined;
         [{_, Translation}] -> Translation
     end.
 
--spec dnpgettext(atom(), binary(), binary(), binary(), binary(), integer()) -> binary().
+-spec dnpgettext(atom(), binary() | undefined, binary(), binary(), integer(), binary()) -> binary() | undefined.
 dnpgettext(Domain, Context, Singular, Plural, N, Locale) ->
     case ets:lookup(?TAB, ?PLURAL_RULE_KEY(Domain, Locale)) of
         []                  -> undefined;

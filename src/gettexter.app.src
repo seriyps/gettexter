@@ -5,7 +5,8 @@
   {registered, []},
   {applications, [
                   kernel,
-                  stdlib
+                  stdlib,
+                  syntax_tools
                  ]},
   {mod, { gettexter_app, []}},
   {env, []},

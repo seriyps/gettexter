@@ -205,7 +205,7 @@ dnpgettext(Domain, Context, Singular, Plural, N, Locale)
     case Translation of
         undefined when N == 1 -> Singular;
         undefined             -> Plural;
-        Translation           -> Translation
+        _ when is_binary(Translation) -> Translation
     end;
 %% string case
 dnpgettext(Domain, MaybeContext, StrSingular, StrPlural, N, Locale)
