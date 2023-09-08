@@ -99,6 +99,27 @@ bindtextdomain_regression_test_() ->
      ]
     }.
 
+reload_test_() ->
+    {setup, fun start_load/0, fun stop/1,
+     [
+      fun() ->
+              gettexter:textdomain(?GETTEXT_DOMAIN),
+              ?assertEqual(<<"Hejsan">>, gettexter:gettext(<<"Hello">>, <<"se">>)),
+              ?assertMatch([{<<"se">>, ok, _}], gettexter:reload(?GETTEXT_DOMAIN, [<<"se">>])),
+              ?assertEqual(<<"Hejsan">>, gettexter:gettext(<<"Hello">>, <<"se">>))
+      end
+     ]}.
+
+aux_test_() ->
+    {setup, fun start_load/0, fun stop/1,
+     [
+      fun() ->
+              ?assertEqual([<<"se">>], gettexter:which_locales(?GETTEXT_DOMAIN)),
+              ?assertEqual([?GETTEXT_DOMAIN], gettexter:which_domains()),
+              ?assertEqual([?GETTEXT_DOMAIN], gettexter:which_domains(<<"se">>)),
+              ?assertEqual([], gettexter:which_domains(<<"en">>))
+      end
+     ]}.
 
 start() ->
     case gettexter_server:start_link() of

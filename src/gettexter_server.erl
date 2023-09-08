@@ -11,7 +11,8 @@
 -export([start_link/0]).
 -export([dpgettext/4, dnpgettext/6]).
 -export([bindtextdomain/2]).
--export([ensure_loaded/3, which_domains/1, which_locales/1, which_loaded/0, which_keys/2, header/3]).
+-export([ensure_loaded/3, reload/2, which_domains/0, which_domains/1, which_locales/1,
+         which_loaded/0, which_keys/2, header/3]).
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
@@ -73,9 +74,20 @@ ensure_loaded(TextDomain, _Category, Locale) ->
         false -> gen_server:call(?SERVER, {ensure_loaded, TextDomain, Locale})
     end.
 
+-spec reload(atom(), [Locale]) -> [{Locale, ok, binary()} |
+                                   {Locale, error, any()}]
+              when
+      Locale :: binary().
+reload(TextDomain, Locales) ->
+    gen_server:call(?SERVER, {reload, TextDomain, Locales}).
+
 -spec which_domains(binary()) -> [atom()].
 which_domains(Locale) ->
     [Domain || [Domain] <- ets:match(?TAB, {?LOADED_KEY('$1', Locale), '_'})].
+
+-spec which_domains() -> [atom()].
+which_domains() ->
+    lists:usort([Domain || [Domain] <- ets:match(?TAB, {?LOADED_KEY('$1', '_'), '_'})]).
 
 -spec which_locales(atom()) -> [binary()].
 which_locales(Domain) ->
@@ -135,7 +147,26 @@ handle_call({ensure_loaded, Domain, Locale}, _From, State) ->
                             {error, {Type, Reason, Trace}}
                     end
             end,
-    {reply, Reply, State}.
+    {reply, Reply, State};
+handle_call({reload, Domain, Locales}, _From, State) ->
+    Res =
+        lists:map(
+          fun(Locale) ->
+                  case ets:member(?TAB, ?LOADED_KEY(Domain, Locale)) of
+                      false ->
+                          {Locale, error, not_loaded};
+                      true ->
+                          try
+                              {ok, MoFile} = load_locale(?TAB, Domain, Locale),
+                              {Locale, ok, MoFile}
+                          catch T:R:S ->
+                                  ?LOG_ERROR("Locale ~s reload failed: ~p:~p~n~p", [Locale, T, R, S],
+                                             #{domain => [gettexter, server]}),
+                                  {Locale, error, {T, R}}
+                          end
+                  end
+          end, Locales),
+    {reply, Res, State}.
 
 handle_cast(_Msg, State) ->
     {noreply, State}.

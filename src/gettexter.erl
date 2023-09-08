@@ -74,7 +74,7 @@
 -export([bind_textdomain_codeset/2]).
 
 %% auxillary
--export([which_domains/1, which_locales/1, ensure_loaded/3, reset/0]).
+-export([which_domains/0, which_domains/1, which_locales/1, ensure_loaded/3, reload/1, reload/2, reset/0]).
 
 %% helper types
 -type text() :: binary() | string().
@@ -270,6 +270,11 @@ bind_textdomain_codeset(_Domain, _Charset) ->
 %% auxillary
 %%
 
+%% @doc which unique domains are loaded.
+-spec which_domains() -> [atom()].
+which_domains() ->
+    gettexter_server:which_domains().
+
 %% @doc Which domains are loaded for `Locale'.
 -spec which_domains(Locale :: locale()) -> [atom()].
 which_domains(Locale) ->
@@ -287,6 +292,17 @@ which_locales(Domain) ->
     {ok, file:filename() | already} |{error, any()}.
 ensure_loaded(Domain, Category, Locale) ->
     gettexter_server:ensure_loaded(Domain, Category, to_binary(Locale)).
+
+%% @doc Reload locales from previously bound textdomain
+%% Note: only new and existing keys are added/updated; keys that were removed from .mo file are not
+%% going to be removed from database!
+reload(Domain) ->
+    reload(Domain, which_locales(Domain)).
+
+-spec reload(Domain :: atom(), [locale()]) -> [{locale(), ok, file:filename()} |
+                                               {locale(), error, any()}].
+reload(Domain, Locales) when is_list(Locales) ->
+    gettexter_server:reload(Domain, lists:map(fun to_binary/1, Locales)).
 
 %% @doc Reset the process dictionary
 %% Remove all gettext stuff from process dictionary (but not from locale data

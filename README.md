@@ -215,6 +215,15 @@ In case of error, all data for this combination of `Domain` and `Locale` will
 be removed from gettexter server to avoid incomplete/broken data.
 
 ```erlang
+reload(Domain) -> list().
+
+reload(Domain, [locale()]) -> [{locale(), ok, file:filename()} |
+                               {locale(), error, any()}].
+```
+Re-reads the phrases from `.mo` files bound by `bindtextdomain/2` (eg, if those files changed).
+Function `reload/1` reloads ALL the locales of the domain `Domain`.
+
+```erlang
 gettexter:reset() -> ok.
 ```
 Remove all gettext stuff, added by `setlocale` or `textdomain`, from process
