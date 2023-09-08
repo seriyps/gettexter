@@ -16,6 +16,8 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
+-include_lib("kernel/include/logger.hrl").
+
 %% -export([to_lower/1, strip/1]).
 -define(SERVER, ?MODULE).
 -define(TAB, gettexter_server_ets).
@@ -125,6 +127,9 @@ handle_call({ensure_loaded, Domain, Locale}, _From, State) ->
                     try
                         load_locale(?TAB, Domain, Locale)
                     catch Type:Reason:Trace ->
+                            ?LOG_ERROR("Locale ~s load failed: ~p:~p~n~p",
+                                       [Locale, Type, Reason, Trace],
+                                       #{domain => [gettexter, server]}),
                             %% cleanup possible partial load
                             catch unload_locale(?TAB, Domain, Locale),
                             {error, {Type, Reason, Trace}}
@@ -183,8 +188,9 @@ load_locale(Tab, Domain, Locale) ->
                               end, HeadersList),
             true = ets:insert(Tab, HObjs);
         Other ->
-            error_logger:warning_msg("Locale metadata for locale '~ts' domain ~p"
-                                     " not available: ~p", [Locale, Domain, Other])
+            ?LOG_WARNING("Locale metadata for locale '~ts' domain ~p"
+                         " not available: ~p", [Locale, Domain, Other],
+                         #{domain => [gettexter, server]})
     end,
     true = ets:insert(Tab, {?LOADED_KEY(Domain, Locale), MoFileName}),
     {ok, MoFileName}.
@@ -236,9 +242,10 @@ rel_to_abs_path(Domain, RelPath) ->
 load_plural_rule(Tab, Domain, Locale, Headers) ->
     case proplists:get_value(<<"plural-forms">>, Headers) of
         undefined ->
-            error_logger:warning_msg(
+            ?LOG_INFO(
               "Plural-Forms for locale '~ts' domain ~p not available",
-              [Locale, Domain]);
+              [Locale, Domain],
+              #{domain => [gettexter, server]});
         ValueBin ->
             PluralRule = gettexter_plural:compile(binary_to_list(ValueBin), []),
             true = ets:insert(Tab, {?PLURAL_RULE_KEY(Domain, Locale), PluralRule})

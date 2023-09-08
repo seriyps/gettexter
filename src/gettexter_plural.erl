@@ -27,6 +27,8 @@
 %% Runtime dependency
 -export([to_boolean/1, to_integer/1]).
 
+-include_lib("kernel/include/logger.hrl").
+
 -type operand() :: non_neg_integer() | n.
 -type un_expr() :: {atom(), math_expr()}.
 -type bin_expr() :: {atom(), math_expr(), math_expr()}.
@@ -61,10 +63,11 @@ plural(N, #plural_rule_compiled{nplurals=NPlurals, abstract_form=Tree}) when is_
     true = (PluralFormN =< NPlurals),           %assertion
     PluralFormN;
 plural(N, StringExpr) when is_list(StringExpr) andalso is_integer(N) ->
-    error_logger:warning_msg(
+    ?LOG_WARNING(
       "~p:~p(~p, \"~s\") called! This is very slow and should be used only for debugging! "
       "In production 2'nd argument should be return value of ~p:~p/2",
-      [?MODULE, plural, N, StringExpr, ?MODULE, compile]),
+      [?MODULE, plural, N, StringExpr, ?MODULE, compile],
+      #{domain => [gettexter, plural]}),
     plural(N, compile(StringExpr, [])).
 
 %% @doc
