@@ -323,6 +323,8 @@ TODO
 
 Expression, `?_(<<"...">>)` is not well handled by `xgettext`, so, variants:
 
+* Use `?NO_` hack: `Key = <<?NO_("text")>>, Translated = ?_(Key)`
+
 * Write own extractor like xgettext, but for erlang code. Also, `.pot` serializer
   will be needed then.
 
